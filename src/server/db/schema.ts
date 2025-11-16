@@ -6,14 +6,16 @@ import {
   pgTableCreator,
   text,
   timestamp,
-  uuid,
   index,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 
+// -----------------------
+// USER (BetterAuth uses text IDs, not UUID)
+// -----------------------
 export const user = pgTable("user", {
-  id: uuid("id").primaryKey(),
+  id: text("id").primaryKey(), // <-- FIX FOR BETTERAUTH
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified")
@@ -28,11 +30,14 @@ export const user = pgTable("user", {
     .notNull(),
 });
 
+// -----------------------
+// ACTIVITY (UUID ok)
+// -----------------------
 export const activity = pgTable(
   "activity",
   {
-    id: uuid("id").primaryKey(),
-    userId: uuid("user_id")
+    id: text("id").primaryKey(),
+    userId: text("user_id") // <-- FIX userId must be text
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
@@ -48,16 +53,21 @@ export const activity = pgTable(
   (table) => [index("activity_user_id_idx").on(table.userId)],
 );
 
+// -----------------------
+// ACTIVITY LOG (UUID ok except FK userId)
+// -----------------------
 export const activityLog = pgTable(
   "activity_log",
   {
-    id: uuid("id").primaryKey(),
-    activityId: uuid("activity_id")
+    id: text("id").primaryKey(),
+    activityId: text("activity_id")
       .notNull()
       .references(() => activity.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
+
+    userId: text("user_id") // <-- FIX userId changed to text
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+
     value: numeric("value").notNull(),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
@@ -67,16 +77,11 @@ export const activityLog = pgTable(
       .notNull(),
   },
   (table) => [
-    // Para estadísticas por fechas (día, semana, mes, año)
     index("activity_log_user_date_idx").on(table.userId, table.createdAt),
-
-    // Para sacar evolución por actividad
     index("activity_log_activity_date_idx").on(
       table.activityId,
       table.createdAt,
     ),
-
-    // Para rankings por actividad y usuario
     index("activity_log_user_activity_date_idx").on(
       table.userId,
       table.activityId,
@@ -85,32 +90,41 @@ export const activityLog = pgTable(
   ],
 );
 
+// -----------------------
+// SESSION (BetterAuth uses text IDs)
+// -----------------------
 export const session = pgTable(
   "session",
   {
-    id: uuid("id").primaryKey(),
+    id: text("id").primaryKey(), // <-- FIX: BetterAuth session IDs are text
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    userId: uuid("user_id")
+
+    userId: text("user_id") // <-- FIX userId must be text
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
   (table) => [index("session_user_id_idx").on(table.userId)],
 );
 
+// -----------------------
+// ACCOUNT (BetterAuth uses text IDs)
+// -----------------------
 export const account = pgTable(
   "account",
   {
-    id: uuid("id").primaryKey(),
+    id: text("id").primaryKey(), // <-- FIX
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
-    userId: uuid("user_id")
+
+    userId: text("user_id") // <-- FIX userId must be text
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
@@ -124,8 +138,11 @@ export const account = pgTable(
   (table) => [index("account_user_id_idx").on(table.userId)],
 );
 
+// -----------------------
+// VERIFICATION (BetterAuth)
+// -----------------------
 export const verification = pgTable("verification", {
-  id: uuid("id").primaryKey(),
+  id: text("id").primaryKey(), // <-- FIX
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
@@ -133,6 +150,9 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at").$defaultFn(() => new Date()),
 });
 
+// -----------------------
+// RELATIONS
+// -----------------------
 export const userRelations = relations(user, ({ many }) => ({
   account: many(account),
   session: many(session),
