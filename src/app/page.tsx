@@ -88,7 +88,7 @@ export default async function Home() {
                       });
                       redirect("/");
                     }}
-                    type="button"
+                    type="submit"
                   >
                     Sign out
                   </button>
