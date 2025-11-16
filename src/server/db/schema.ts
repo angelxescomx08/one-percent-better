@@ -7,15 +7,16 @@ import {
   text,
   timestamp,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 
-// -----------------------
-// USER (BetterAuth uses text IDs, not UUID)
-// -----------------------
+// -------------------------------------------------
+// USER (BetterAuth)
+// -------------------------------------------------
 export const user = pgTable("user", {
-  id: text("id").primaryKey(), // <-- FIX FOR BETTERAUTH
+  id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified")
@@ -30,19 +31,67 @@ export const user = pgTable("user", {
     .notNull(),
 });
 
-// -----------------------
-// ACTIVITY (UUID ok)
-// -----------------------
+// -------------------------------------------------
+// CATEGORY  (Lectura, Ejercicio, Estudio...)
+// -------------------------------------------------
+export const category = pgTable("category", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+});
+
+// -------------------------------------------------
+// UNIT (páginas, horas, repeticiones)
+// Cada unidad pertenece a una categoría
+// -------------------------------------------------
+export const unit = pgTable(
+  "unit",
+  {
+    id: text("id").primaryKey(),
+
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => category.id, { onDelete: "cascade" }),
+
+    name: text("name").notNull(), // Ej: "páginas"
+    shortName: text("short_name"), // Ej: "pag"
+
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    // Evita duplicados: (category + name) debe ser único
+    unique("unit_category_name_unique").on(table.categoryId, table.name),
+  ],
+);
+
+// -------------------------------------------------
+// ACTIVITY (Actividad creada por el usuario)
+// (ej: "Leer libro X", "Correr", "Estudiar Python")
+// -------------------------------------------------
 export const activity = pgTable(
   "activity",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id") // <-- FIX userId must be text
+
+    userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+
+    categoryId: text("category_id")
+      .notNull()
+      .references(() => category.id, { onDelete: "cascade" }),
+
+    unitId: text("unit_id")
+      .notNull()
+      .references(() => unit.id, { onDelete: "cascade" }),
+
     name: text("name").notNull(),
     description: text("description"),
-    unit: text("unit"),
+
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
@@ -53,50 +102,56 @@ export const activity = pgTable(
   (table) => [index("activity_user_id_idx").on(table.userId)],
 );
 
-// -----------------------
-// ACTIVITY LOG (UUID ok except FK userId)
-// -----------------------
+// -------------------------------------------------
+// ACTIVITY LOG (Registro del usuario)
+// -------------------------------------------------
 export const activityLog = pgTable(
   "activity_log",
   {
     id: text("id").primaryKey(),
+
     activityId: text("activity_id")
       .notNull()
       .references(() => activity.id, { onDelete: "cascade" }),
 
-    userId: text("user_id") // <-- FIX userId changed to text
+    userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
 
-    value: numeric("value").notNull(),
+    unitId: text("unit_id")
+      .notNull()
+      .references(() => unit.id, { onDelete: "cascade" }),
+
+    date: timestamp("date").notNull(), // día exacto del registro
+    value: numeric("value").notNull(), // cantidad (númerica)
+    note: text("note"),
+
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
+
     updatedAt: timestamp("updated_at")
       .$defaultFn(() => new Date())
       .notNull(),
   },
   (table) => [
-    index("activity_log_user_date_idx").on(table.userId, table.createdAt),
-    index("activity_log_activity_date_idx").on(
-      table.activityId,
-      table.createdAt,
-    ),
+    index("activity_log_user_date_idx").on(table.userId, table.date),
+    index("activity_log_activity_date_idx").on(table.activityId, table.date),
     index("activity_log_user_activity_date_idx").on(
       table.userId,
       table.activityId,
-      table.createdAt,
+      table.date,
     ),
   ],
 );
 
-// -----------------------
-// SESSION (BetterAuth uses text IDs)
-// -----------------------
+// -------------------------------------------------
+// SESSION (BetterAuth)
+// -------------------------------------------------
 export const session = pgTable(
   "session",
   {
-    id: text("id").primaryKey(), // <-- FIX: BetterAuth session IDs are text
+    id: text("id").primaryKey(),
     expiresAt: timestamp("expires_at").notNull(),
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").notNull(),
@@ -104,24 +159,24 @@ export const session = pgTable(
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
 
-    userId: text("user_id") // <-- FIX userId must be text
+    userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
   },
   (table) => [index("session_user_id_idx").on(table.userId)],
 );
 
-// -----------------------
-// ACCOUNT (BetterAuth uses text IDs)
-// -----------------------
+// -------------------------------------------------
+// ACCOUNT (BetterAuth)
+// -------------------------------------------------
 export const account = pgTable(
   "account",
   {
-    id: text("id").primaryKey(), // <-- FIX
+    id: text("id").primaryKey(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
 
-    userId: text("user_id") // <-- FIX userId must be text
+    userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
 
@@ -138,11 +193,11 @@ export const account = pgTable(
   (table) => [index("account_user_id_idx").on(table.userId)],
 );
 
-// -----------------------
-// VERIFICATION (BetterAuth)
-// -----------------------
+// -------------------------------------------------
+// VERIFICATION
+// -------------------------------------------------
 export const verification = pgTable("verification", {
-  id: text("id").primaryKey(), // <-- FIX
+  id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
@@ -150,9 +205,10 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at").$defaultFn(() => new Date()),
 });
 
-// -----------------------
+// -------------------------------------------------
 // RELATIONS
-// -----------------------
+// -------------------------------------------------
+
 export const userRelations = relations(user, ({ many }) => ({
   account: many(account),
   session: many(session),
@@ -160,16 +216,30 @@ export const userRelations = relations(user, ({ many }) => ({
   logs: many(activityLog),
 }));
 
-export const accountRelations = relations(account, ({ one }) => ({
-  user: one(user, { fields: [account.userId], references: [user.id] }),
+export const categoryRelations = relations(category, ({ many }) => ({
+  units: many(unit),
+  activities: many(activity),
 }));
 
-export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, { fields: [session.userId], references: [user.id] }),
+export const unitRelations = relations(unit, ({ one, many }) => ({
+  category: one(category, {
+    fields: [unit.categoryId],
+    references: [category.id],
+  }),
+  activities: many(activity),
+  logs: many(activityLog),
 }));
 
 export const activityRelations = relations(activity, ({ one, many }) => ({
   user: one(user, { fields: [activity.userId], references: [user.id] }),
+  category: one(category, {
+    fields: [activity.categoryId],
+    references: [category.id],
+  }),
+  unit: one(unit, {
+    fields: [activity.unitId],
+    references: [unit.id],
+  }),
   logs: many(activityLog),
 }));
 
@@ -179,4 +249,16 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
     fields: [activityLog.activityId],
     references: [activity.id],
   }),
+  unit: one(unit, {
+    fields: [activityLog.unitId],
+    references: [unit.id],
+  }),
+}));
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, { fields: [account.userId], references: [user.id] }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, { fields: [session.userId], references: [user.id] }),
 }));

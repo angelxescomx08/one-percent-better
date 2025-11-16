@@ -1,5 +1,5 @@
 {
-  "id": "9645cc34-602c-4325-a0a1-464b3ac95462",
+  "id": "0c9d4e57-b42d-4720-aa95-34141dbea072",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -141,6 +141,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "category_id": {
+          "name": "category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_id": {
+          "name": "unit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -149,12 +161,6 @@
         },
         "description": {
           "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "unit": {
-          "name": "unit",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -202,6 +208,32 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "activity_category_id_category_id_fk": {
+          "name": "activity_category_id_category_id_fk",
+          "tableFrom": "activity",
+          "tableTo": "category",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "activity_unit_id_unit_id_fk": {
+          "name": "activity_unit_id_unit_id_fk",
+          "tableFrom": "activity",
+          "tableTo": "unit",
+          "columnsFrom": [
+            "unit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -232,11 +264,29 @@
           "primaryKey": false,
           "notNull": true
         },
+        "unit_id": {
+          "name": "unit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
         "value": {
           "name": "value",
           "type": "numeric",
           "primaryKey": false,
           "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -262,7 +312,7 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
+              "expression": "date",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -283,7 +333,7 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
+              "expression": "date",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -310,7 +360,7 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
+              "expression": "date",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -348,10 +398,62 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "activity_log_unit_id_unit_id_fk": {
+          "name": "activity_log_unit_id_unit_id_fk",
+          "tableFrom": "activity_log",
+          "tableTo": "unit",
+          "columnsFrom": [
+            "unit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.category": {
+      "name": "category",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "category_name_unique": {
+          "name": "category_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -448,6 +550,72 @@
           "nullsNotDistinct": false,
           "columns": [
             "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.unit": {
+      "name": "unit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "unit_category_id_category_id_fk": {
+          "name": "unit_category_id_category_id_fk",
+          "tableFrom": "unit",
+          "tableTo": "category",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "unit_category_name_unique": {
+          "name": "unit_category_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "category_id",
+            "name"
           ]
         }
       },
