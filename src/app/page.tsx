@@ -14,7 +14,7 @@ export default async function Home() {
               const res = await auth.api.signInSocial({
                 body: {
                   provider: "google",
-                  callbackURL: "/pa",
+                  callbackURL: "/panel",
                 },
               });
               if (!res.url) {
