@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:18
+    container_name: one-percent-better-db
+    restart: always
+    environment:
+      POSTGRES_USER: angel
+      POSTGRES_PASSWORD: supersecret
+      POSTGRES_DB: one_percent_better
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+
+volumes:
+  db_data:
