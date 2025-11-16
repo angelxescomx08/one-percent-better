@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "~/server/better-auth";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -11,9 +10,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await auth.api.getSession({ headers: req.headers });
-
-  if (!session) {
+  const cookie = req.cookies.get("better-auth.session_token");
+  if (!cookie || !cookie.value) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
