@@ -3,22 +3,25 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
   const startPathPrivateRoutes = "/panel";
-
-  if (!pathname.startsWith(startPathPrivateRoutes)) {
-    return NextResponse.next();
-  }
+  const publicRoutes = ["/"];
 
   const cookie = req.cookies.get("better-auth.session_token");
-  if (!cookie || !cookie.value) {
+
+  if (
+    (!cookie || !cookie.value) &&
+    pathname.startsWith(startPathPrivateRoutes)
+  ) {
     return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  if (cookie && cookie.value && publicRoutes.includes(pathname)) {
+    return NextResponse.redirect(new URL("/panel", req.url));
   }
 
   return NextResponse.next();
 }
 
-// Middleware corre en TODAS las rutas
 export const config = {
   matcher: [
     /*
