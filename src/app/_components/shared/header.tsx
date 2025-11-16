@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 
 const nav = [
-  { name: "Dashboard", href: "/dashboard" },
+  { name: "Panel", href: "/panel" },
   { name: "Actividades", href: "/dashboard/activities" },
   { name: "Progreso", href: "/dashboard/progress" },
 ];
