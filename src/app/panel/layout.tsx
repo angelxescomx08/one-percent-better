@@ -8,7 +8,7 @@ export default function PanelLayout({
   return (
     <>
       <Header />
-      <main>{children}</main>
+      <main className="container m-auto">{children}</main>
     </>
   );
 }

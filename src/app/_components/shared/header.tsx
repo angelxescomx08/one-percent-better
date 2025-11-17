@@ -25,15 +25,13 @@ import { api } from "~/trpc/react";
 
 const nav = [
   { name: "Panel", href: "/panel" },
-  { name: "Actividades", href: "/dashboard/activities" },
-  { name: "Progreso", href: "/dashboard/progress" },
+  { name: "Actividades", href: "/panel/activities" },
+  { name: "Progreso", href: "/panel/progress" },
 ];
 
 export default function Header() {
   const pathname = usePathname();
   const session = api.auth.getSession.useQuery();
-
-  console.log({ session: session.data });
 
   return (
     <header className="w-full border-b bg-white sticky top-0 z-50">
