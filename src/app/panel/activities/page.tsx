@@ -5,21 +5,18 @@ import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Info, Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import ModalDrawer from "~/app/_components/shared/modalDrawer";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Activities() {
   const { data: activities, isLoading } = api.activity.getActivities.useQuery();
-
-  const [isOpen, setIsOpen] = useState(false);
-
+  const router = useRouter();
   return (
     <section className="py-4 space-y-6">
       {/* BOTÓN SUPERIOR PARA CREAR ACTIVIDAD */}
       <div className="flex justify-end">
         <Button
           className="flex items-center gap-2"
-          onClick={() => setIsOpen(true)}
+          onClick={() => router.push("")}
         >
           <Plus className="h-4 w-4" />
           Agregar actividad
@@ -78,15 +75,6 @@ export default function Activities() {
           ))}
         </div>
       )}
-
-      <ModalDrawer
-        title="Agregar actividad"
-        description="Agrega o crea una actividad para empezar a registrar tu progreso"
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-      >
-        <div></div>
-      </ModalDrawer>
     </section>
   );
 }
