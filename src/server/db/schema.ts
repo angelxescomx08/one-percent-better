@@ -34,13 +34,20 @@ export const user = pgTable("user", {
 // -------------------------------------------------
 // CATEGORY  (Lectura, Ejercicio, Estudio...)
 // -------------------------------------------------
-export const category = pgTable("category", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  createdAt: timestamp("created_at")
-    .$defaultFn(() => new Date())
-    .notNull(),
-});
+export const category = pgTable(
+  "category",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull().unique(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (table) => [index("category_name_idx").on(table.name)],
+);
 
 // -------------------------------------------------
 // UNIT (páginas, horas, repeticiones)
@@ -50,21 +57,28 @@ export const unit = pgTable(
   "unit",
   {
     id: text("id").primaryKey(),
-
     categoryId: text("category_id")
       .notNull()
       .references(() => category.id, { onDelete: "cascade" }),
-
     name: text("name").notNull(), // Ej: "páginas"
     shortName: text("short_name"), // Ej: "pag"
-
     createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
       .$defaultFn(() => new Date())
       .notNull(),
   },
   (table) => [
     // Evita duplicados: (category + name) debe ser único
     unique("unit_category_name_unique").on(table.categoryId, table.name),
+    index("unit_category_id_idx").on(table.categoryId),
+    index("unit_name_idx").on(table.name),
+    index("unit_short_name_idx").on(table.shortName),
+    index("unit_short_name_category_id_idx").on(
+      table.shortName,
+      table.categoryId,
+    ),
   ],
 );
 
@@ -76,22 +90,14 @@ export const activity = pgTable(
   "activity",
   {
     id: text("id").primaryKey(),
-
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-
     categoryId: text("category_id")
       .notNull()
       .references(() => category.id, { onDelete: "cascade" }),
-
     unitId: text("unit_id")
       .notNull()
       .references(() => unit.id, { onDelete: "cascade" }),
-
     name: text("name").notNull(),
     description: text("description"),
-
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
@@ -99,7 +105,13 @@ export const activity = pgTable(
       .$defaultFn(() => new Date())
       .notNull(),
   },
-  (table) => [index("activity_user_id_idx").on(table.userId)],
+  (table) => [
+    index("activity_created_idx").on(table.createdAt),
+    index("activity_category_id_idx").on(table.categoryId),
+    index("activity_unit_id_idx").on(table.unitId),
+    index("activity_name_idx").on(table.name),
+    index("activity_description_idx").on(table.description),
+  ],
 );
 
 // -------------------------------------------------
@@ -109,27 +121,21 @@ export const activityLog = pgTable(
   "activity_log",
   {
     id: text("id").primaryKey(),
-
     activityId: text("activity_id")
       .notNull()
       .references(() => activity.id, { onDelete: "cascade" }),
-
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-
     unitId: text("unit_id")
       .notNull()
       .references(() => unit.id, { onDelete: "cascade" }),
-
     date: timestamp("date").notNull(), // día exacto del registro
     value: numeric("value").notNull(), // cantidad (númerica)
     note: text("note"),
-
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
-
     updatedAt: timestamp("updated_at")
       .$defaultFn(() => new Date())
       .notNull(),
@@ -231,7 +237,6 @@ export const unitRelations = relations(unit, ({ one, many }) => ({
 }));
 
 export const activityRelations = relations(activity, ({ one, many }) => ({
-  user: one(user, { fields: [activity.userId], references: [user.id] }),
   category: one(category, {
     fields: [activity.categoryId],
     references: [category.id],
