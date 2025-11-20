@@ -1,12 +1,12 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  index,
   numeric,
   pgTable,
   pgTableCreator,
   text,
   timestamp,
-  index,
   unique,
 } from "drizzle-orm/pg-core";
 
@@ -32,7 +32,7 @@ export const user = pgTable("user", {
 });
 
 // -------------------------------------------------
-// CATEGORY  (Lectura, Ejercicio, Estudio...)
+// CATEGORY
 // -------------------------------------------------
 export const category = pgTable(
   "category",
@@ -50,8 +50,7 @@ export const category = pgTable(
 );
 
 // -------------------------------------------------
-// UNIT (páginas, horas, repeticiones)
-// Cada unidad pertenece a una categoría
+// UNIT
 // -------------------------------------------------
 export const unit = pgTable(
   "unit",
@@ -60,8 +59,8 @@ export const unit = pgTable(
     categoryId: text("category_id")
       .notNull()
       .references(() => category.id, { onDelete: "cascade" }),
-    name: text("name").notNull(), // Ej: "páginas"
-    shortName: text("short_name"), // Ej: "pag"
+    name: text("name").notNull(),
+    shortName: text("short_name"),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
@@ -70,7 +69,6 @@ export const unit = pgTable(
       .notNull(),
   },
   (table) => [
-    // Evita duplicados: (category + name) debe ser único
     unique("unit_category_name_unique").on(table.categoryId, table.name),
     index("unit_category_id_idx").on(table.categoryId),
     index("unit_name_idx").on(table.name),
@@ -83,8 +81,7 @@ export const unit = pgTable(
 );
 
 // -------------------------------------------------
-// ACTIVITY (Actividad creada por el usuario)
-// (ej: "Leer libro X", "Correr", "Estudiar Python")
+// ACTIVITY
 // -------------------------------------------------
 export const activity = pgTable(
   "activity",
@@ -115,7 +112,7 @@ export const activity = pgTable(
 );
 
 // -------------------------------------------------
-// ACTIVITY LOG (Registro del usuario)
+// ACTIVITY LOG
 // -------------------------------------------------
 export const activityLog = pgTable(
   "activity_log",
@@ -130,8 +127,8 @@ export const activityLog = pgTable(
     unitId: text("unit_id")
       .notNull()
       .references(() => unit.id, { onDelete: "cascade" }),
-    date: timestamp("date").notNull(), // día exacto del registro
-    value: numeric("value").notNull(), // cantidad (númerica)
+    date: timestamp("date").notNull(),
+    value: numeric("value").notNull(),
     note: text("note"),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
@@ -152,7 +149,34 @@ export const activityLog = pgTable(
 );
 
 // -------------------------------------------------
-// SESSION (BetterAuth)
+// USER ACTIVITY (Usuario se apunta a una actividad)
+// -------------------------------------------------
+export const userActivity = pgTable(
+  "user_activity",
+  {
+    id: text("id").primaryKey(),
+
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    activityId: text("activity_id")
+      .notNull()
+      .references(() => activity.id, { onDelete: "cascade" }),
+
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("user_activity_unique").on(table.userId, table.activityId),
+    index("user_activity_user_idx").on(table.userId),
+    index("user_activity_activity_idx").on(table.activityId),
+  ],
+);
+
+// -------------------------------------------------
+// SESSION
 // -------------------------------------------------
 export const session = pgTable(
   "session",
@@ -173,7 +197,7 @@ export const session = pgTable(
 );
 
 // -------------------------------------------------
-// ACCOUNT (BetterAuth)
+// ACCOUNT
 // -------------------------------------------------
 export const account = pgTable(
   "account",
@@ -220,6 +244,7 @@ export const userRelations = relations(user, ({ many }) => ({
   session: many(session),
   activities: many(activity),
   logs: many(activityLog),
+  userActivities: many(userActivity),
 }));
 
 export const categoryRelations = relations(category, ({ many }) => ({
@@ -246,6 +271,7 @@ export const activityRelations = relations(activity, ({ one, many }) => ({
     references: [unit.id],
   }),
   logs: many(activityLog),
+  userActivities: many(userActivity),
 }));
 
 export const activityLogRelations = relations(activityLog, ({ one }) => ({
@@ -257,6 +283,17 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
   unit: one(unit, {
     fields: [activityLog.unitId],
     references: [unit.id],
+  }),
+}));
+
+export const userActivityRelations = relations(userActivity, ({ one }) => ({
+  user: one(user, {
+    fields: [userActivity.userId],
+    references: [user.id],
+  }),
+  activity: one(activity, {
+    fields: [userActivity.activityId],
+    references: [activity.id],
   }),
 }));
 
