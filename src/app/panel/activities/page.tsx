@@ -16,7 +16,7 @@ export default function Activities() {
       <div className="flex justify-end">
         <Button
           className="flex items-center gap-2"
-          onClick={() => router.push("")}
+          onClick={() => router.push("/panel/activities/create")}
         >
           <Plus className="h-4 w-4" />
           Agregar actividad
