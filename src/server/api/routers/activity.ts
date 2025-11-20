@@ -2,18 +2,17 @@ import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { activity, activityLog, category, unit } from "~/server/db/schema";
+import { activity, category, unit, userActivity } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
   getActivities: protectedProcedure.query(async ({ ctx }) => {
     const { session, db } = ctx;
     const activities = await db
-      .selectDistinctOn([activity.id])
-      .from(activity)
-      .innerJoin(activityLog, eq(activity.id, activityLog.activityId))
-      .where(eq(activityLog.userId, session.user.id));
+      .select()
+      .from(userActivity)
+      .where(eq(userActivity.userId, session.user.id));
 
-    return activities.map((a) => a.activity);
+    return activities;
   }),
 
   getCategories: protectedProcedure.query(async ({ ctx }) => {
@@ -53,6 +52,17 @@ export const activityRouter = createTRPCRouter({
           description: input.description ?? null,
         })
         .returning();
+
+      if (!newActivity[0]) {
+        throw new Error("Failed to create activity");
+      }
+
+      // Create user activity
+      await db.insert(userActivity).values({
+        id: randomUUID(),
+        userId: ctx.session.user.id,
+        activityId: newActivity[0].id,
+      });
 
       return newActivity[0];
     }),
