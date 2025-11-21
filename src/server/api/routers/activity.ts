@@ -10,9 +10,10 @@ export const activityRouter = createTRPCRouter({
     const activities = await db
       .select()
       .from(userActivity)
+      .innerJoin(activity, eq(userActivity.activityId, activity.id))
       .where(eq(userActivity.userId, session.user.id));
 
-    return activities;
+    return activities.map(activity => activity.activity);
   }),
 
   getCategories: protectedProcedure.query(async ({ ctx }) => {
