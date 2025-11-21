@@ -4,14 +4,8 @@ import { Info, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import {
-	Card,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
+import { ActivityCard } from "~/modules/activities/components/activityCard";
 import { api } from "~/trpc/react";
 
 export default function Activities() {
@@ -63,25 +57,7 @@ export default function Activities() {
 			{!isLoading && activities && activities.length > 0 && (
 				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{activities.map((activity) => (
-						<Card
-							className="cursor-pointer transition-all hover:shadow-md"
-							key={activity.id}
-							onClick={() =>
-								console.log("Registrar progreso de actividad:", activity.id)
-							}
-						>
-							<CardHeader>
-								<CardTitle>{activity.name}</CardTitle>
-								<CardDescription>
-									{activity.description ?? "Sin descripción"}
-								</CardDescription>
-							</CardHeader>
-							<CardFooter>
-								<p className="font-medium text-blue-600 text-xs">
-									🍀 Da click para registrar tu progreso →
-								</p>
-							</CardFooter>
-						</Card>
+						<ActivityCard activity={activity} key={activity.id} />
 					))}
 				</div>
 			)}
