@@ -1,4 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
+import { useRouter } from "next/navigation";
 import {
 	Card,
 	CardDescription,
@@ -12,12 +13,15 @@ type ActivityCardProps = {
 	activity: InferSelectModel<typeof activity>;
 };
 export function ActivityCard({ activity }: ActivityCardProps) {
+
+	const router = useRouter();
+
 	return (
 		<Card
 			className="cursor-pointer transition-all hover:shadow-md"
 			key={activity.id}
 			onClick={() =>
-				console.log("Registrar progreso de actividad:", activity.id)
+				router.push(`/panel/activities/progress/register/${activity.id}`)
 			}
 		>
 			<CardHeader>
