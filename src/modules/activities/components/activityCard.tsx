@@ -21,7 +21,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
 			className="cursor-pointer transition-all hover:shadow-md"
 			key={activity.id}
 			onClick={() =>
-				router.push(`/panel/activities/progress/register/${activity.id}`)
+				router.push(`/panel/activities/activity-logs/${activity.id}`)
 			}
 		>
 			<CardHeader>

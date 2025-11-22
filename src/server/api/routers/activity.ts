@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { activity, activityLog, category, unit, userActivity } from "~/server/db/schema";
@@ -190,5 +190,82 @@ export const activityRouter = createTRPCRouter({
         .returning();
 
       return newLog[0];
+    }),
+
+  getActivityLogs: protectedProcedure
+    .input(
+      z.object({
+        activityId: z.string().min(1, "La actividad es requerida"),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        limit: z.number().min(1).max(100).default(10),
+        offset: z.number().min(0).default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, session } = ctx;
+
+      // Verificar que la actividad pertenece al usuario
+      const userActivityResult = await db
+        .select()
+        .from(userActivity)
+        .where(
+          and(
+            eq(userActivity.userId, session.user.id),
+            eq(userActivity.activityId, input.activityId)
+          )
+        )
+        .limit(1);
+
+      if (!userActivityResult[0]) {
+        throw new Error("Activity not found or access denied");
+      }
+
+      // Construir condiciones de filtro
+      const conditions = [
+        eq(activityLog.activityId, input.activityId),
+        eq(activityLog.userId, session.user.id),
+      ];
+
+      if (input.startDate) {
+        conditions.push(gte(activityLog.date, input.startDate));
+      }
+
+      if (input.endDate) {
+        // Agregar un día completo al endDate para incluir todo el día
+        const endDateWithTime = new Date(input.endDate);
+        endDateWithTime.setHours(23, 59, 59, 999);
+        conditions.push(lte(activityLog.date, endDateWithTime));
+      }
+
+      // Obtener los logs con la unidad
+      const logs = await db
+        .select({
+          log: activityLog,
+          unit: unit,
+        })
+        .from(activityLog)
+        .innerJoin(unit, eq(activityLog.unitId, unit.id))
+        .where(and(...conditions))
+        .orderBy(desc(activityLog.date))
+        .limit(input.limit)
+        .offset(input.offset);
+
+      // Contar el total de registros que coinciden con los filtros
+      const totalCountResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(activityLog)
+        .where(and(...conditions));
+
+      const totalCount = Number(totalCountResult[0]?.count ?? 0);
+
+      return {
+        logs: logs.map((item) => ({
+          ...item.log,
+          unit: item.unit,
+        })),
+        totalCount,
+        hasMore: input.offset + input.limit < totalCount,
+      };
     }),
 });
