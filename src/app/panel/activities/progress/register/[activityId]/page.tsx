@@ -41,6 +41,8 @@ export default function RegisterProgressPage() {
 	const params = useParams();
 	const activityId = params.activityId as string;
 
+	const utils = api.useUtils();
+
 	const { data: activityData, isLoading } =
 		api.activity.getActivityById.useQuery(
 			{ activityId },
@@ -48,7 +50,8 @@ export default function RegisterProgressPage() {
 		);
 
 	const createActivityLog = api.activity.createActivityLog.useMutation({
-		onSuccess: () => {
+		onSuccess: async () => {
+			await utils.activity.getActivityLogs.invalidate();
 			router.push("/panel/activities");
 		},
 	});
