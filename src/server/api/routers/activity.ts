@@ -268,4 +268,301 @@ export const activityRouter = createTRPCRouter({
         hasMore: input.offset + input.limit < totalCount,
       };
     }),
+
+  getTopRankings: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, session } = ctx;
+
+      // Obtener todas las actividades del usuario
+      const userActivities = await db
+        .select({
+          activity: activity,
+          category: category,
+          unit: unit,
+        })
+        .from(userActivity)
+        .innerJoin(activity, eq(userActivity.activityId, activity.id))
+        .innerJoin(category, eq(activity.categoryId, category.id))
+        .innerJoin(unit, eq(activity.unitId, unit.id))
+        .where(eq(userActivity.userId, session.user.id));
+
+      // Construir condiciones de fecha para los logs
+      const dateConditions: ReturnType<typeof gte>[] = [];
+      if (input.startDate) {
+        dateConditions.push(gte(activityLog.date, input.startDate));
+      }
+      if (input.endDate) {
+        const endDateWithTime = new Date(input.endDate);
+        endDateWithTime.setHours(23, 59, 59, 999);
+        dateConditions.push(lte(activityLog.date, endDateWithTime));
+      }
+
+      const rankings = await Promise.all(
+        userActivities.map(async (ua) => {
+          // Obtener el mejor registro del usuario actual para esta actividad
+          const userLogs = await db
+            .select({
+              value: activityLog.value,
+            })
+            .from(activityLog)
+            .where(
+              and(
+                eq(activityLog.activityId, ua.activity.id),
+                eq(activityLog.userId, session.user.id),
+                ...dateConditions,
+              ),
+            )
+            .orderBy(desc(activityLog.value))
+            .limit(1);
+
+          if (!userLogs[0]) {
+            return null;
+          }
+
+          const userBestValue = Number(userLogs[0]?.value ?? 0);
+
+          // Obtener todos los usuarios que tienen registros en esta actividad
+          const allUserLogs = await db
+            .select({
+              userId: activityLog.userId,
+              bestValue: sql<number>`MAX(${activityLog.value})::numeric`,
+            })
+            .from(activityLog)
+            .where(
+              and(
+                eq(activityLog.activityId, ua.activity.id),
+                ...dateConditions,
+              ),
+            )
+            .groupBy(activityLog.userId);
+
+          // Ordenar por mejor valor (descendente) y calcular la posición
+          const sortedLogs = allUserLogs
+            .map((log) => ({
+              userId: log.userId,
+              bestValue: Number(log.bestValue),
+            }))
+            .sort((a, b) => b.bestValue - a.bestValue);
+
+          const userPosition =
+            sortedLogs.findIndex((log) => log.userId === session.user.id) + 1;
+          const totalUsers = sortedLogs.length;
+
+          // Calcular el porcentaje de posición (mejor posición = mayor porcentaje)
+          const positionPercentage =
+            totalUsers > 0
+              ? ((totalUsers - userPosition + 1) / totalUsers) * 100
+              : 0;
+
+          return {
+            activity: ua.activity,
+            category: ua.category,
+            unit: ua.unit,
+            userBestValue,
+            position: userPosition,
+            totalUsers,
+            positionPercentage,
+          };
+        }),
+      );
+
+      // Filtrar nulos, ordenar por posición (mejor primero) y luego por porcentaje
+      const validRankings = rankings
+        .filter((r): r is NonNullable<typeof r> => r !== null)
+        .sort((a, b) => {
+          if (a.position !== b.position) {
+            return a.position - b.position;
+          }
+          return b.positionPercentage - a.positionPercentage;
+        });
+
+      // Seleccionar las top 5, priorizando diferentes categorías
+      const selectedRankings: (typeof validRankings)[number][] = [];
+      const usedCategories = new Set<string>();
+
+      // Primero agregar uno de cada categoría
+      for (const ranking of validRankings) {
+        if (
+          selectedRankings.length < 5 &&
+          !usedCategories.has(ranking.category.id)
+        ) {
+          selectedRankings.push(ranking);
+          usedCategories.add(ranking.category.id);
+        }
+      }
+
+      // Llenar los espacios restantes con las mejores posiciones
+      for (const ranking of validRankings) {
+        if (selectedRankings.length < 5 && !selectedRankings.includes(ranking)) {
+          selectedRankings.push(ranking);
+        }
+      }
+
+      return selectedRankings.slice(0, 5);
+    }),
+
+  getImprovementPercentage: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+        compareStartDate: z.date().optional(),
+        compareEndDate: z.date().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, session } = ctx;
+
+      // Si no se proporcionan fechas de comparación, usar el mismo rango anterior
+      const periodLength =
+        input.endDate.getTime() - input.startDate.getTime();
+      let compareStart = input.compareStartDate;
+      let compareEnd = input.compareEndDate;
+
+      if (!compareStart || !compareEnd) {
+        compareEnd = new Date(input.startDate.getTime() - 1);
+        compareStart = new Date(compareEnd.getTime() - periodLength);
+      }
+
+      // Obtener actividades del usuario con sus categorías
+      const userActivities = await db
+        .select({
+          activity: activity,
+          category: category,
+          unit: unit,
+        })
+        .from(userActivity)
+        .innerJoin(activity, eq(userActivity.activityId, activity.id))
+        .innerJoin(category, eq(activity.categoryId, category.id))
+        .innerJoin(unit, eq(activity.unitId, unit.id))
+        .where(eq(userActivity.userId, session.user.id));
+
+      const improvements = await Promise.all(
+        userActivities.map(async (ua) => {
+          // Calcular promedio del período actual
+          const endDateWithTime = new Date(input.endDate);
+          endDateWithTime.setHours(23, 59, 59, 999);
+
+          const currentLogs = await db
+            .select({
+              value: activityLog.value,
+            })
+            .from(activityLog)
+            .where(
+              and(
+                eq(activityLog.activityId, ua.activity.id),
+                eq(activityLog.userId, session.user.id),
+                gte(activityLog.date, input.startDate),
+                lte(activityLog.date, endDateWithTime),
+              ),
+            );
+
+          // Calcular promedio del período anterior
+          const compareEndWithTime: Date | undefined = compareEnd ? new Date(compareEnd) : undefined;
+          if (compareEndWithTime) {
+            compareEndWithTime.setHours(23, 59, 59, 999);
+          }
+
+          const previousLogs = await db
+            .select({
+              value: activityLog.value,
+            })
+            .from(activityLog)
+            .where(
+              and(
+                eq(activityLog.activityId, ua.activity.id),
+                eq(activityLog.userId, session.user.id),
+                ...(compareStart
+                  ? [gte(activityLog.date, compareStart)]
+                  : []),
+                ...(compareEndWithTime
+                  ? [lte(activityLog.date, compareEndWithTime)]
+                  : []),
+              ),
+            );
+
+          if (currentLogs.length === 0) {
+            return null;
+          }
+
+          const currentAvg =
+            currentLogs.reduce(
+              (sum, log) => sum + Number(log.value),
+              0,
+            ) / currentLogs.length;
+
+          if (previousLogs.length === 0) {
+            // Si no hay datos anteriores, considerar mejora del 0%
+            return {
+              activity: ua.activity,
+              category: ua.category,
+              unit: ua.unit,
+              currentAvg,
+              previousAvg: currentAvg,
+              improvementPercentage: 0,
+            };
+          }
+
+          const previousAvg =
+            previousLogs.reduce(
+              (sum, log) => sum + Number(log.value),
+              0,
+            ) / previousLogs.length;
+
+          // Calcular porcentaje de mejora
+          const improvementPercentage =
+            previousAvg > 0
+              ? ((currentAvg - previousAvg) / previousAvg) * 100
+              : currentAvg > 0
+                ? 100
+                : 0;
+
+          return {
+            activity: ua.activity,
+            category: ua.category,
+            unit: ua.unit,
+            currentAvg,
+            previousAvg,
+            improvementPercentage,
+          };
+        }),
+      );
+
+      // Filtrar nulos, ordenar por porcentaje de mejora descendente y seleccionar diferentes categorías
+      const validImprovements = improvements
+        .filter((i): i is NonNullable<typeof i> => i !== null)
+        .sort((a, b) => b.improvementPercentage - a.improvementPercentage);
+
+      // Seleccionar actividades de diferentes categorías con mejor mejora
+      const selectedImprovements: (typeof validImprovements)[number][] = [];
+      const usedCategories = new Set<string>();
+
+      for (const improvement of validImprovements) {
+        if (
+          selectedImprovements.length < 5 &&
+          !usedCategories.has(improvement.category.id)
+        ) {
+          selectedImprovements.push(improvement);
+          usedCategories.add(improvement.category.id);
+        }
+      }
+
+      // Llenar los espacios restantes
+      for (const improvement of validImprovements) {
+        if (
+          selectedImprovements.length < 5 &&
+          !selectedImprovements.includes(improvement)
+        ) {
+          selectedImprovements.push(improvement);
+        }
+      }
+
+      return selectedImprovements.slice(0, 5);
+    }),
 });

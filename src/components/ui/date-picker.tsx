@@ -31,16 +31,16 @@ export function DatePicker({
 	const [open, setOpen] = React.useState(false);
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover onOpenChange={setOpen} open={open}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="outline"
 					className={cn(
 						"w-full justify-start text-left font-normal",
 						!date && "text-muted-foreground",
 						className,
 					)}
 					disabled={disabled}
+					variant="outline"
 				>
 					<CalendarIcon className="mr-2 h-4 w-4" />
 					{date ? (
@@ -50,19 +50,18 @@ export function DatePicker({
 					)}
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
+			<PopoverContent align="start" className="w-auto p-0">
 				<Calendar
+					initialFocus
+					locale={es}
 					mode="single"
-					selected={date}
 					onSelect={(selectedDate) => {
 						onDateChange?.(selectedDate);
 						setOpen(false);
 					}}
-					initialFocus
-					locale={es}
+					selected={date}
 				/>
 			</PopoverContent>
 		</Popover>
 	);
 }
-
