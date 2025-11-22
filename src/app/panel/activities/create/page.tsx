@@ -23,6 +23,7 @@ import {
 	FieldGroup,
 	FieldLabel,
 } from "~/components/ui/field";
+import { Input } from "~/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -30,6 +31,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 
 const createActivitySchema = z.object({
@@ -269,8 +271,7 @@ export default function CreateActivityPage() {
 							Nombre <span className="text-destructive">*</span>
 						</FieldLabel>
 						<FieldContent>
-							<input
-								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+							<Input
 								id="name"
 								placeholder="Ej: Leer libro X, Correr, Estudiar Python"
 								type="text"
@@ -288,8 +289,7 @@ export default function CreateActivityPage() {
 					<Field data-invalid={!!errors.description}>
 						<FieldLabel htmlFor="description">Descripción</FieldLabel>
 						<FieldContent>
-							<textarea
-								className="flex min-h-[60px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+							<Textarea
 								id="description"
 								placeholder="Descripción opcional de la actividad..."
 								rows={4}
@@ -343,8 +343,7 @@ export default function CreateActivityPage() {
 								Nombre <span className="text-destructive">*</span>
 							</FieldLabel>
 							<FieldContent>
-								<input
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+								<Input
 									id="category-name"
 									placeholder="Ej: Lectura, Ejercicio, Estudio"
 									type="text"
@@ -395,8 +394,7 @@ export default function CreateActivityPage() {
 								Nombre <span className="text-destructive">*</span>
 							</FieldLabel>
 							<FieldContent>
-								<input
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+								<Input
 									id="unit-name"
 									placeholder="Ej: páginas, horas, repeticiones"
 									type="text"
@@ -415,8 +413,7 @@ export default function CreateActivityPage() {
 						<Field data-invalid={!!unitForm.formState.errors.shortName}>
 							<FieldLabel htmlFor="unit-short-name">Nombre corto</FieldLabel>
 							<FieldContent>
-								<input
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+								<Input
 									id="unit-short-name"
 									placeholder="Ej: pag, hrs, rep"
 									type="text"

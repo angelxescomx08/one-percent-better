@@ -13,7 +13,9 @@ import {
 	FieldGroup,
 	FieldLabel,
 } from "~/components/ui/field";
+import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 
 const registerProgressSchema = z.object({
@@ -113,8 +115,7 @@ export default function RegisterProgressPage() {
 							Fecha <span className="text-destructive">*</span>
 						</FieldLabel>
 						<FieldContent>
-							<input
-								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+							<Input
 								id="date"
 								type="date"
 								{...register("date", {
@@ -140,8 +141,7 @@ export default function RegisterProgressPage() {
 							Valor ({unitName}) <span className="text-destructive">*</span>
 						</FieldLabel>
 						<FieldContent>
-							<input
-								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+							<Input
 								id="value"
 								inputMode="decimal"
 								placeholder={`Ej: 10, 5.5, 100`}
@@ -160,8 +160,7 @@ export default function RegisterProgressPage() {
 					<Field data-invalid={!!errors.note}>
 						<FieldLabel htmlFor="note">Nota</FieldLabel>
 						<FieldContent>
-							<textarea
-								className="flex min-h-[60px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+							<Textarea
 								id="note"
 								placeholder="Agrega una nota adicional sobre tu progreso (opcional)..."
 								rows={4}
