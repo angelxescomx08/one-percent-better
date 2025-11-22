@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
+import { DatePicker } from "~/components/ui/date-picker";
 import {
 	Field,
 	FieldContent,
@@ -19,7 +20,10 @@ import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 
 const registerProgressSchema = z.object({
-	date: z.string().min(1, "La fecha es requerida"),
+	date: z.date({
+		required_error: "La fecha es requerida",
+		invalid_type_error: "Debes seleccionar una fecha válida",
+	}),
 	value: z
 		.string()
 		.min(1, "El valor es requerido")
@@ -52,11 +56,12 @@ export default function RegisterProgressPage() {
 	const {
 		register,
 		handleSubmit,
+		control,
 		formState: { errors, isSubmitting },
 	} = useForm<RegisterProgressForm>({
 		resolver: zodResolver(registerProgressSchema),
 		defaultValues: {
-			date: new Date().toISOString().split("T")[0],
+			date: new Date(),
 			value: "",
 			note: "",
 		},
@@ -66,7 +71,7 @@ export default function RegisterProgressPage() {
 		try {
 			await createActivityLog.mutateAsync({
 				activityId,
-				date: new Date(data.date),
+				date: data.date,
 				value: data.value,
 				note: data.note,
 			});
@@ -115,18 +120,19 @@ export default function RegisterProgressPage() {
 							Fecha <span className="text-destructive">*</span>
 						</FieldLabel>
 						<FieldContent>
-							<Input
-								id="date"
-								type="date"
-								{...register("date", {
-									setValueAs: (value: string | Date) => {
-										if (value instanceof Date) {
-											return value.toISOString().split("T")[0];
-										}
-										return value || "";
-									},
-								})}
-								disabled={isSubmitting}
+							<Controller
+								control={control}
+								name="date"
+								render={({ field }) => (
+									<DatePicker
+										date={field.value}
+										disabled={isSubmitting}
+										onDateChange={(date) => {
+											field.onChange(date ?? new Date());
+										}}
+										placeholder="Selecciona una fecha"
+									/>
+								)}
 							/>
 							<FieldDescription>
 								Selecciona la fecha en la que realizaste esta actividad
