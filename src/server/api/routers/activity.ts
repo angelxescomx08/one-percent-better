@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { activity, activityLog, category, unit, userActivity } from "~/server/db/schema";
+import { activity, activityLog, category, unit, user, userActivity } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
   getActivities: protectedProcedure.query(async ({ ctx }) => {
@@ -269,15 +269,173 @@ export const activityRouter = createTRPCRouter({
       };
     }),
 
-  getTopRankings: protectedProcedure
+  getRankingTable: protectedProcedure
     .input(
       z.object({
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
+        activityId: z.string(),
+        period: z.enum(["yesterday", "week", "month", "year", "all"]),
       }),
     )
     .query(async ({ ctx, input }) => {
       const { db, session } = ctx;
+
+      // Calcular fechas según el período
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      let startDate: Date | undefined;
+
+      switch (input.period) {
+        case "yesterday": {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          startDate = new Date(yesterday);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "week": {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          startDate = new Date(weekAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "month": {
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          startDate = new Date(monthAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "year": {
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          startDate = new Date(yearAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "all":
+          startDate = undefined;
+          break;
+      }
+
+      // Construir condiciones de fecha
+      const dateConditions: ReturnType<typeof gte>[] = [];
+      if (startDate) {
+        dateConditions.push(gte(activityLog.date, startDate));
+      }
+      dateConditions.push(lte(activityLog.date, now));
+
+      // Obtener todos los usuarios con sus mejores valores para esta actividad
+      const allUserLogs = await db
+        .select({
+          userId: activityLog.userId,
+          userName: user.name,
+          userEmail: user.email,
+          bestValue: sql<number>`MAX(${activityLog.value})::numeric`,
+        })
+        .from(activityLog)
+        .innerJoin(user, eq(activityLog.userId, user.id))
+        .where(
+          and(
+            eq(activityLog.activityId, input.activityId),
+            ...dateConditions,
+          ),
+        )
+        .groupBy(activityLog.userId, user.name, user.email);
+
+      // Ordenar por mejor valor (descendente)
+      const sortedLogs = allUserLogs
+        .map((log) => ({
+          userId: log.userId,
+          userName: log.userName,
+          userEmail: log.userEmail,
+          bestValue: Number(log.bestValue),
+        }))
+        .sort((a, b) => b.bestValue - a.bestValue);
+
+      // Obtener información de la actividad
+      const activityInfo = await db
+        .select({
+          activity: activity,
+          category: category,
+          unit: unit,
+        })
+        .from(activity)
+        .innerJoin(category, eq(activity.categoryId, category.id))
+        .innerJoin(unit, eq(activity.unitId, unit.id))
+        .where(eq(activity.id, input.activityId))
+        .limit(1);
+
+      if (!activityInfo[0]) {
+        throw new Error("Activity not found");
+      }
+
+      return {
+        activity: activityInfo[0].activity,
+        category: activityInfo[0].category,
+        unit: activityInfo[0].unit,
+        rankings: sortedLogs.map((log, index) => ({
+          ...log,
+          position: index + 1,
+        })),
+        currentUserId: session.user.id,
+      };
+    }),
+
+  getTopRankings: protectedProcedure
+    .input(
+      z.object({
+        period: z.enum(["yesterday", "week", "month", "year", "all"]),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, session } = ctx;
+
+      // Calcular fechas según el período
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      let startDate: Date | undefined;
+
+      switch (input.period) {
+        case "yesterday": {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          startDate = new Date(yesterday);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "week": {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          startDate = new Date(weekAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "month": {
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          startDate = new Date(monthAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "year": {
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          startDate = new Date(yearAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "all":
+          startDate = undefined;
+          break;
+      }
+
+      // Construir condiciones de fecha
+      const dateConditions: ReturnType<typeof gte>[] = [];
+      if (startDate) {
+        dateConditions.push(gte(activityLog.date, startDate));
+      }
+      dateConditions.push(lte(activityLog.date, now));
 
       // Obtener todas las actividades del usuario
       const userActivities = await db
@@ -291,17 +449,6 @@ export const activityRouter = createTRPCRouter({
         .innerJoin(category, eq(activity.categoryId, category.id))
         .innerJoin(unit, eq(activity.unitId, unit.id))
         .where(eq(userActivity.userId, session.user.id));
-
-      // Construir condiciones de fecha para los logs
-      const dateConditions: ReturnType<typeof gte>[] = [];
-      if (input.startDate) {
-        dateConditions.push(gte(activityLog.date, input.startDate));
-      }
-      if (input.endDate) {
-        const endDateWithTime = new Date(input.endDate);
-        endDateWithTime.setHours(23, 59, 59, 999);
-        dateConditions.push(lte(activityLog.date, endDateWithTime));
-      }
 
       const rankings = await Promise.all(
         userActivities.map(async (ua) => {
@@ -410,24 +557,97 @@ export const activityRouter = createTRPCRouter({
   getImprovementPercentage: protectedProcedure
     .input(
       z.object({
-        startDate: z.date(),
-        endDate: z.date(),
-        compareStartDate: z.date().optional(),
-        compareEndDate: z.date().optional(),
+        period: z.enum(["yesterday", "week", "month", "year", "all"]),
       }),
     )
     .query(async ({ ctx, input }) => {
       const { db, session } = ctx;
 
-      // Si no se proporcionan fechas de comparación, usar el mismo rango anterior
-      const periodLength =
-        input.endDate.getTime() - input.startDate.getTime();
-      let compareStart = input.compareStartDate;
-      let compareEnd = input.compareEndDate;
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
 
-      if (!compareStart || !compareEnd) {
-        compareEnd = new Date(input.startDate.getTime() - 1);
-        compareStart = new Date(compareEnd.getTime() - periodLength);
+      // Calcular fechas del período actual
+      let currentStart: Date;
+      let currentEnd = new Date(now);
+      currentEnd.setHours(23, 59, 59, 999);
+
+      // Calcular fechas del período de comparación
+      let compareStart: Date;
+      let compareEnd: Date;
+
+      switch (input.period) {
+        case "yesterday": {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          currentStart = new Date(yesterday);
+          currentStart.setHours(0, 0, 0, 0);
+          currentEnd = new Date(yesterday);
+          currentEnd.setHours(23, 59, 59, 999);
+
+          const dayBefore = new Date(yesterday);
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          compareStart = new Date(dayBefore);
+          compareStart.setHours(0, 0, 0, 0);
+          compareEnd = new Date(dayBefore);
+          compareEnd.setHours(23, 59, 59, 999);
+          break;
+        }
+        case "week": {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          currentStart = new Date(weekAgo);
+          currentStart.setHours(0, 0, 0, 0);
+
+          const twoWeeksAgo = new Date(weekAgo);
+          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 7);
+          compareStart = new Date(twoWeeksAgo);
+          compareStart.setHours(0, 0, 0, 0);
+          compareEnd = new Date(weekAgo);
+          compareEnd.setDate(compareEnd.getDate() - 1);
+          compareEnd.setHours(23, 59, 59, 999);
+          break;
+        }
+        case "month": {
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          currentStart = new Date(monthAgo);
+          currentStart.setHours(0, 0, 0, 0);
+
+          const twoMonthsAgo = new Date(monthAgo);
+          twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 1);
+          compareStart = new Date(twoMonthsAgo);
+          compareStart.setHours(0, 0, 0, 0);
+          compareEnd = new Date(monthAgo);
+          compareEnd.setDate(compareEnd.getDate() - 1);
+          compareEnd.setHours(23, 59, 59, 999);
+          break;
+        }
+        case "year": {
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          currentStart = new Date(yearAgo);
+          currentStart.setHours(0, 0, 0, 0);
+
+          const twoYearsAgo = new Date(yearAgo);
+          twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 1);
+          compareStart = new Date(twoYearsAgo);
+          compareStart.setHours(0, 0, 0, 0);
+          compareEnd = new Date(yearAgo);
+          compareEnd.setDate(compareEnd.getDate() - 1);
+          compareEnd.setHours(23, 59, 59, 999);
+          break;
+        }
+        case "all": {
+          // Para "all", comparar todo el tiempo vs desde el inicio hasta hace un año
+          currentStart = new Date(0); // Desde siempre
+
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          compareStart = new Date(0);
+          compareEnd = new Date(yearAgo);
+          compareEnd.setHours(23, 59, 59, 999);
+          break;
+        }
       }
 
       // Obtener actividades del usuario con sus categorías
@@ -446,9 +666,6 @@ export const activityRouter = createTRPCRouter({
       const improvements = await Promise.all(
         userActivities.map(async (ua) => {
           // Calcular promedio del período actual
-          const endDateWithTime = new Date(input.endDate);
-          endDateWithTime.setHours(23, 59, 59, 999);
-
           const currentLogs = await db
             .select({
               value: activityLog.value,
@@ -458,17 +675,12 @@ export const activityRouter = createTRPCRouter({
               and(
                 eq(activityLog.activityId, ua.activity.id),
                 eq(activityLog.userId, session.user.id),
-                gte(activityLog.date, input.startDate),
-                lte(activityLog.date, endDateWithTime),
+                gte(activityLog.date, currentStart),
+                lte(activityLog.date, currentEnd),
               ),
             );
 
           // Calcular promedio del período anterior
-          const compareEndWithTime: Date | undefined = compareEnd ? new Date(compareEnd) : undefined;
-          if (compareEndWithTime) {
-            compareEndWithTime.setHours(23, 59, 59, 999);
-          }
-
           const previousLogs = await db
             .select({
               value: activityLog.value,
@@ -478,12 +690,8 @@ export const activityRouter = createTRPCRouter({
               and(
                 eq(activityLog.activityId, ua.activity.id),
                 eq(activityLog.userId, session.user.id),
-                ...(compareStart
-                  ? [gte(activityLog.date, compareStart)]
-                  : []),
-                ...(compareEndWithTime
-                  ? [lte(activityLog.date, compareEndWithTime)]
-                  : []),
+                gte(activityLog.date, compareStart),
+                lte(activityLog.date, compareEnd),
               ),
             );
 
