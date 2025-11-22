@@ -9,6 +9,12 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg", // or "pg" or "mysql"
   }),
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // Cache duration in seconds
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },
