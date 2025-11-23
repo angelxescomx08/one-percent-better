@@ -19,6 +19,7 @@ import { HydrateClient } from "~/trpc/server";
 
 async function signInWithEmail(formData: FormData) {
 	"use server";
+
 	const email = formData.get("email") as string;
 	const password = formData.get("password") as string;
 
@@ -26,20 +27,12 @@ async function signInWithEmail(formData: FormData) {
 		throw new Error("Email y contraseña son requeridos");
 	}
 
-	try {
-		await auth.api.signInEmail({
-			body: {
-				email,
-				password,
-			},
-			headers: await headers(),
-		});
-		redirect("/panel");
-	} catch (error) {
-		throw new Error(
-			error instanceof Error ? error.message : "Error al iniciar sesión",
-		);
-	}
+	await auth.api.signInEmail({
+		body: { email, password },
+		headers: await headers(),
+	});
+
+	redirect("/panel");
 }
 
 async function signInWithGoogle() {
@@ -113,7 +106,12 @@ export default async function Home() {
 
 						<form action={signInWithGoogle}>
 							<Button className="w-full" type="submit" variant="outline">
-								<Image alt="Google" height={20} src="/imgs/Logo-google-icon-PNG.png" width={20} />
+								<Image
+									alt="Google"
+									height={20}
+									src="/imgs/Logo-google-icon-PNG.png"
+									width={20}
+								/>
 								Continuar con Google
 							</Button>
 						</form>
