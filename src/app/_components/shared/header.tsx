@@ -20,6 +20,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "~/components/ui/sheet";
+import { signOutAction } from "~/modules/auth/actions/auth";
 import { api } from "~/trpc/react";
 
 const nav = [
@@ -31,7 +32,6 @@ const nav = [
 export default function Header() {
 	const pathname = usePathname();
 	const session = api.auth.getSession.useQuery();
-	const { mutate: signOut } = api.auth.signOut.useMutation();
 	return (
 		<header className="sticky top-0 z-50 w-full border-b bg-white">
 			<div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
@@ -84,7 +84,7 @@ export default function Header() {
 
 							<DropdownMenuItem
 								className="text-red-600"
-								onClick={() => signOut()}
+								onClick={() => signOutAction()}
 							>
 								Cerrar sesión
 							</DropdownMenuItem>
@@ -128,7 +128,7 @@ export default function Header() {
 
 								<Button
 									className="text-red-500 text-sm"
-									onClick={() => signOut()}
+									onClick={() => signOutAction()}
 								>
 									Cerrar sesión
 								</Button>
