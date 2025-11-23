@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const startPathPrivateRoutes = "/panel";
-  const publicRoutes = ["/"];
+  const publicRoutes = ["/", "/register"];
 
   const cookie = req.cookies.get("better-auth.session_token");
 
@@ -15,7 +15,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (cookie && cookie.value && publicRoutes.includes(pathname)) {
+  if (cookie?.value && publicRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL("/panel", req.url));
   }
 

@@ -17,18 +17,20 @@ import { Separator } from "~/components/ui/separator";
 import { auth } from "~/server/better-auth";
 import { HydrateClient } from "~/trpc/server";
 
-async function signInWithEmail(formData: FormData) {
+async function signUpWithEmail(formData: FormData) {
 	"use server";
+	const name = formData.get("name") as string;
 	const email = formData.get("email") as string;
 	const password = formData.get("password") as string;
 
-	if (!email || !password) {
-		throw new Error("Email y contraseña son requeridos");
+	if (!name || !email || !password) {
+		throw new Error("Nombre, email y contraseña son requeridos");
 	}
 
 	try {
-		await auth.api.signInEmail({
+		await auth.api.signUpEmail({
 			body: {
+				name,
 				email,
 				password,
 			},
@@ -37,7 +39,7 @@ async function signInWithEmail(formData: FormData) {
 		redirect("/panel");
 	} catch (error) {
 		throw new Error(
-			error instanceof Error ? error.message : "Error al iniciar sesión",
+			error instanceof Error ? error.message : "Error al crear la cuenta",
 		);
 	}
 }
@@ -56,21 +58,33 @@ async function signInWithGoogle() {
 	redirect(res.url);
 }
 
-export default async function Home() {
+export default async function RegisterPage() {
 	return (
 		<HydrateClient>
 			<main className="flex min-h-screen flex-col items-center justify-center bg-linear-to-b from-[#2e026d] to-[#15162c] p-4">
 				<Card className="w-full max-w-md">
 					<CardHeader className="space-y-1">
 						<CardTitle className="text-center font-bold text-2xl">
-							Iniciar Sesión
+							Crear Cuenta
 						</CardTitle>
 						<CardDescription className="text-center">
-							Ingresa con tu correo y contraseña o con Google
+							Regístrate con tu correo y contraseña o con Google
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<form action={signInWithEmail} className="space-y-4">
+						<form action={signUpWithEmail} className="space-y-4">
+							<Field>
+								<FieldLabel htmlFor="name">Nombre</FieldLabel>
+								<FieldContent>
+									<Input
+										id="name"
+										name="name"
+										placeholder="Tu nombre"
+										required
+										type="text"
+									/>
+								</FieldContent>
+							</Field>
 							<Field>
 								<FieldLabel htmlFor="email">Correo Electrónico</FieldLabel>
 								<FieldContent>
@@ -96,7 +110,7 @@ export default async function Home() {
 								</FieldContent>
 							</Field>
 							<Button className="w-full" type="submit">
-								Iniciar Sesión
+								Crear Cuenta
 							</Button>
 						</form>
 
@@ -113,19 +127,24 @@ export default async function Home() {
 
 						<form action={signInWithGoogle}>
 							<Button className="w-full" type="submit" variant="outline">
-								<Image alt="Google" height={20} src="/imgs/Logo-google-icon-PNG.png" width={20} />
+								<Image
+									alt="Google"
+									height={20}
+									src="/imgs/Logo-google-icon-PNG.png"
+									width={20}
+								/>
 								Continuar con Google
 							</Button>
 						</form>
 					</CardContent>
 					<CardFooter className="flex flex-col space-y-4">
 						<div className="text-center text-muted-foreground text-sm">
-							¿No tienes una cuenta?{" "}
+							¿Ya tienes una cuenta?{" "}
 							<Link
 								className="text-primary underline-offset-4 hover:underline"
-								href="/register"
+								href="/"
 							>
-								Regístrate
+								Inicia sesión
 							</Link>
 						</div>
 					</CardFooter>
