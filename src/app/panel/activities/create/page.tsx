@@ -64,7 +64,8 @@ export default function CreateActivityPage() {
 		api.activity.getCategories.useQuery();
 
 	const createActivity = api.activity.create.useMutation({
-		onSuccess: () => {
+		onSuccess: async () => {
+			await utils.activity.getActivities.invalidate();
 			router.push("/panel/activities");
 		},
 	});
