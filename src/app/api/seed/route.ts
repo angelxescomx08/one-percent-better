@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-
+import { names } from "~/lib/data/names";
+import { auth } from "~/server/better-auth/config";
 import { db } from "~/server/db";
 import {
   activity,
@@ -56,90 +58,127 @@ export async function GET() {
     );
 
     // Preparar arrays para inserts en lote
-    const userInserts: (typeof user.$inferInsert)[] = [];
     const userActivityInserts: (typeof userActivity.$inferInsert)[] = [];
     const activityLogInserts: (typeof activityLog.$inferInsert)[] = [];
 
+    // Obtener headers para la API de better-auth
+    const authHeaders = await headers();
+
     // Crear 100 usuarios
     for (let i = 0; i < 100; i++) {
-      const userId = randomUUID();
-      const userName = `Usuario ${i + 1}`;
+      const userName = names[i % names.length] || `Usuario ${i + 1}`;
       const userEmail = `usuario${i + 1}@ejemplo.com`;
+      const password = "123456789";
 
-      // Preparar usuario para insert en lote
-      userInserts.push({
-        id: userId,
-        name: userName,
-        email: userEmail,
-        emailVerified: true,
-        createdAt: twoYearsAgo,
-        updatedAt: twoYearsAgo,
-      });
+      let userId: string;
 
-      createdUsers.push(userId);
-
-      // Asignar actividades al usuario (1-3 actividades determinísticamente)
-      const numActivities = (i % 3) + 1; // 1, 2, o 3 actividades
-      const selectedActivities = existingActivities.slice(0, numActivities);
-
-      for (const { activity: act, unit: unitData } of selectedActivities) {
-        // Preparar userActivity para insert en lote
-        userActivityInserts.push({
-          id: randomUUID(),
-          userId,
-          activityId: act.id,
-          createdAt: twoYearsAgo,
+      try {
+        // Crear usuario usando la API de better-auth
+        const result = await auth.api.signUpEmail({
+          body: {
+            name: userName,
+            email: userEmail,
+            password: password,
+          },
+          headers: authHeaders,
         });
 
-        // Generar logs de actividad para los últimos 2 años
-        // Patrón determinístico: usar el ID del usuario y el día para decidir si hay actividad
-        for (let dayOffset = 0; dayOffset < totalDays; dayOffset++) {
-          const logDate = new Date(twoYearsAgo);
-          logDate.setDate(logDate.getDate() + dayOffset);
-          logDate.setHours(
-            Math.floor((i % 24) * 0.5 + 8), // Hora determinística entre 8-20
-            (i * 7) % 60, // Minutos determinísticos
-            0,
-            0,
-          );
+        // Obtener el ID del usuario creado
+        // Better-auth devuelve el usuario en la respuesta
+        if (result.user?.id) {
+          userId = result.user.id;
+        } else {
+          // Si no viene en la respuesta, buscar el usuario por email
+          const createdUser = await db
+            .select()
+            .from(user)
+            .where(eq(user.email, userEmail))
+            .limit(1);
 
-          // Decidir si este día tiene actividad de forma determinística
-          // Usar una función hash simple basada en userId, activityId y dayOffset
-          const hash =
-            (userId.charCodeAt(0) + act.id.charCodeAt(0) + dayOffset + i * 17) %
-            100;
-
-          // Algunos usuarios son más consistentes que otros
-          // Usuario i tiene actividad si hash < (70 - (i % 30))
-          // Esto crea un rango de 40-70% de días con actividad
-          const activityThreshold = 70 - (i % 30);
-
-          if (hash < activityThreshold) {
-            // Generar un valor determinístico basado en el día y usuario
-            const baseValue = 10 + ((i * 13 + dayOffset * 7) % 100);
-            const improvementFactor = 1 + dayOffset / 1000; // Mejora gradual
-            const value = (baseValue * improvementFactor).toFixed(2);
-
-            // Preparar activityLog para insert en lote
-            activityLogInserts.push({
-              id: randomUUID(),
-              activityId: act.id,
-              userId,
-              unitId: unitData.id,
-              date: logDate,
-              value,
-              note: null,
-              createdAt: logDate,
-              updatedAt: logDate,
-            });
+          if (createdUser.length > 0 && createdUser[0]) {
+            userId = createdUser[0].id;
+          } else {
+            throw new Error(
+              `No se pudo obtener el ID del usuario ${userEmail}`,
+            );
           }
         }
-      }
-    }
 
-    // Insertar todos los usuarios en lote
-    if (userInserts.length > 0) {
-      await db.insert(user).values(userInserts);
+        // Actualizar el usuario para marcarlo como verificado y ajustar fechas
+        await db
+          .update(user)
+          .set({
+            emailVerified: true,
+            createdAt: twoYearsAgo,
+            updatedAt: twoYearsAgo,
+          })
+          .where(eq(user.id, userId));
+
+        createdUsers.push(userId);
+
+        // Asignar actividades al usuario (1-3 actividades determinísticamente)
+        const numActivities = (i % 3) + 1; // 1, 2, o 3 actividades
+        const selectedActivities = existingActivities.slice(0, numActivities);
+
+        for (const { activity: act, unit: unitData } of selectedActivities) {
+          // Preparar userActivity para insert en lote
+          userActivityInserts.push({
+            id: randomUUID(),
+            userId,
+            activityId: act.id,
+            createdAt: twoYearsAgo,
+          });
+
+          // Generar logs de actividad para los últimos 2 años
+          // Patrón determinístico: usar el ID del usuario y el día para decidir si hay actividad
+          for (let dayOffset = 0; dayOffset < totalDays; dayOffset++) {
+            const logDate = new Date(twoYearsAgo);
+            logDate.setDate(logDate.getDate() + dayOffset);
+            logDate.setHours(
+              Math.floor((i % 24) * 0.5 + 8), // Hora determinística entre 8-20
+              (i * 7) % 60, // Minutos determinísticos
+              0,
+              0,
+            );
+
+            // Decidir si este día tiene actividad de forma determinística
+            // Usar una función hash simple basada en userId, activityId y dayOffset
+            const hash =
+              (userId.charCodeAt(0) +
+                act.id.charCodeAt(0) +
+                dayOffset +
+                i * 17) %
+              100;
+
+            // Algunos usuarios son más consistentes que otros
+            // Usuario i tiene actividad si hash < (70 - (i % 30))
+            // Esto crea un rango de 40-70% de días con actividad
+            const activityThreshold = 70 - (i % 30);
+
+            if (hash < activityThreshold) {
+              // Generar un valor determinístico basado en el día y usuario
+              const baseValue = 10 + ((i * 13 + dayOffset * 7) % 100);
+              const improvementFactor = 1 + dayOffset / 1000; // Mejora gradual
+              const value = (baseValue * improvementFactor).toFixed(2);
+
+              // Preparar activityLog para insert en lote
+              activityLogInserts.push({
+                id: randomUUID(),
+                activityId: act.id,
+                userId,
+                unitId: unitData.id,
+                date: logDate,
+                value,
+                note: null,
+                createdAt: logDate,
+                updatedAt: logDate,
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error al crear usuario ${userEmail}:`, error);
+      }
     }
 
     // Insertar todas las relaciones usuario-actividad en lote
