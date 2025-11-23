@@ -1,13 +1,15 @@
 "use client";
 
-import {
-	Crown,
-	Medal,
-	TrendingUp,
-	Trophy,
-} from "lucide-react";
+import { BarChart3, Crown, Medal, TrendingUp, Trophy } from "lucide-react";
 import { useState } from "react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import {
+	Bar,
+	BarChart,
+	Legend,
+	ResponsiveContainer,
+	XAxis,
+	YAxis,
+} from "recharts";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -18,11 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import {
-	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
-} from "~/components/ui/chart";
+import { ChartContainer, ChartTooltip } from "~/components/ui/chart";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
 	Table,
@@ -96,16 +94,68 @@ export default function PanelPage() {
 
 	// Preparar datos para el gráfico de mejoras
 	const chartData =
-		improvementsData?.map((imp) => ({
-			name: imp.activity.name,
-			mejora: Number(imp.improvementPercentage.toFixed(2)),
-			categoria: imp.category.name,
-		})) ?? [];
+		improvementsData?.map((imp) => {
+			const unitName = imp.unit.shortName ?? imp.unit.name;
+			return {
+				name: imp.activity.name,
+				actual: Number(imp.currentAvg.toFixed(2)),
+				anterior: Number(imp.previousAvg.toFixed(2)),
+				categoria: imp.category.name,
+				unidad: unitName,
+			};
+		}) ?? [];
+
+	// Obtener la unidad de medida (asumiendo que todas las actividades usan la misma unidad o la primera)
+	const unidadMedida =
+		improvementsData && improvementsData.length > 0
+			? (improvementsData[0]?.unit.shortName ?? improvementsData[0]?.unit.name)
+			: "";
+
+	// Función para generar mensaje explicativo personalizado
+	const getChartExplanation = () => {
+		if (!improvementsData || improvementsData.length === 0) return "";
+
+		// Obtener categorías y unidades únicas
+		const categorias = new Set(
+			improvementsData.map((imp) => imp.category.name),
+		);
+		const unidades = new Set(
+			improvementsData.map((imp) => imp.unit.shortName ?? imp.unit.name),
+		);
+
+		const categoriasArray = Array.from(categorias);
+		const unidadesArray = Array.from(unidades);
+
+		// Mensaje base
+		let mensaje = `Esta gráfica compara tu rendimiento promedio del ${PERIOD_LABELS[improvementPeriod].toLowerCase()} con el período anterior. `;
+
+		// Personalización por categoría
+		if (categoriasArray.length === 1) {
+			mensaje += `Las actividades mostradas pertenecen a la categoría "${categoriasArray[0]}". `;
+		} else if (categoriasArray.length > 1) {
+			mensaje += `Se muestran actividades de ${categoriasArray.length} categorías diferentes. `;
+		}
+
+		// Personalización por unidad de medida
+		if (unidadesArray.length === 1) {
+			mensaje += `Los valores se miden en ${unidadesArray[0]}. `;
+		} else if (unidadesArray.length > 1) {
+			mensaje += `Se utilizan diferentes unidades de medida (${unidadesArray.join(", ")}). `;
+		}
+
+		mensaje += `La barra verde representa el promedio del período actual, mientras que la barra gris muestra el promedio del período anterior.`;
+
+		return mensaje;
+	};
 
 	const chartConfig = {
-		mejora: {
-			label: "Mejora (%)",
-			color: "hsl(var(--chart-1))",
+		actual: {
+			label: `${PERIOD_LABELS[improvementPeriod]} (${unidadMedida})`,
+			color: "#10b981", // Verde esmeralda
+		},
+		anterior: {
+			label: `Período anterior (${unidadMedida})`,
+			color: "#6b7280", // Gris
 		},
 	};
 
@@ -176,11 +226,12 @@ export default function PanelPage() {
 							{/* Loading */}
 							{isLoadingTopRankings && (
 								<div className="space-y-4">
-									{Array.from({ length: 5 }, (_, i) => `ranking-skeleton-${i}`).map(
-										(key) => (
-											<Skeleton className="h-24 w-full" key={key} />
-										),
-									)}
+									{Array.from(
+										{ length: 5 },
+										(_, i) => `ranking-skeleton-${i}`,
+									).map((key) => (
+										<Skeleton className="h-24 w-full" key={key} />
+									))}
 								</div>
 							)}
 
@@ -217,7 +268,9 @@ export default function PanelPage() {
 																	: "border-blue-300 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20"
 													}`}
 													key={ranking.activity.id}
-													onClick={() => setSelectedActivityId(ranking.activity.id)}
+													onClick={() =>
+														setSelectedActivityId(ranking.activity.id)
+													}
 												>
 													<CardHeader>
 														<div className="flex items-center gap-3">
@@ -273,7 +326,8 @@ export default function PanelPage() {
 											{rankingTableData?.activity.name ?? "Cargando..."}
 										</CardTitle>
 										<CardDescription>
-											Tabla completa de rankings - {PERIOD_LABELS[rankingPeriod]}
+											Tabla completa de rankings -{" "}
+											{PERIOD_LABELS[rankingPeriod]}
 										</CardDescription>
 									</CardHeader>
 									<CardContent>
@@ -297,7 +351,8 @@ export default function PanelPage() {
 													<TableBody>
 														{rankingTableData.rankings.map((ranking, index) => {
 															const isCurrentUser =
-																ranking.userId === rankingTableData.currentUserId;
+																ranking.userId ===
+																rankingTableData.currentUserId;
 															const isTopThree = index < 3;
 															const unitName =
 																rankingTableData.unit.shortName ??
@@ -330,9 +385,7 @@ export default function PanelPage() {
 																		<div className="flex items-center gap-2">
 																			{ranking.userName}
 																			{isCurrentUser && (
-																				<Badge variant="default">
-																					Tú
-																				</Badge>
+																				<Badge variant="default">Tú</Badge>
 																			)}
 																		</div>
 																	</TableCell>
@@ -405,9 +458,7 @@ export default function PanelPage() {
 							</div>
 
 							{/* Loading */}
-							{isLoadingImprovements && (
-								<Skeleton className="h-96 w-full" />
-							)}
+							{isLoadingImprovements && <Skeleton className="h-96 w-full" />}
 
 							{/* No data */}
 							{!isLoadingImprovements &&
@@ -425,44 +476,14 @@ export default function PanelPage() {
 							{!isLoadingImprovements &&
 								improvementsData &&
 								improvementsData.length > 0 && (
-									<div className="space-y-6">
-										<ChartContainer
-											className="h-96 w-full"
-											config={chartConfig}
-										>
-											<ResponsiveContainer height="100%" width="100%">
-												<BarChart data={chartData}>
-													<XAxis
-														angle={-45}
-														dataKey="name"
-														height={100}
-														textAnchor="end"
-														tick={{ fontSize: 12 }}
-													/>
-													<YAxis
-														label={{
-															angle: -90,
-															position: "insideLeft",
-															value: "Mejora (%)",
-														}}
-														tick={{ fontSize: 12 }}
-													/>
-													<ChartTooltip content={<ChartTooltipContent />} />
-													<Bar
-														dataKey="mejora"
-														fill="var(--color-mejora)"
-														radius={[8, 8, 0, 0]}
-													/>
-												</BarChart>
-											</ResponsiveContainer>
-										</ChartContainer>
-
+									<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 										{/* Improvement Cards */}
-										<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+										<div className="grid grid-cols-1 gap-4">
 											{improvementsData.map((improvement) => {
 												const unitName =
 													improvement.unit.shortName ?? improvement.unit.name;
-												const isPositive = improvement.improvementPercentage > 0;
+												const isPositive =
+													improvement.improvementPercentage > 0;
 
 												return (
 													<Card
@@ -494,7 +515,8 @@ export default function PanelPage() {
 																	}`}
 																>
 																	{isPositive ? "+" : ""}
-																	{improvement.improvementPercentage.toFixed(2)}%
+																	{improvement.improvementPercentage.toFixed(2)}
+																	%
 																</div>
 																<div className="text-muted-foreground text-sm">
 																	{isPositive ? "Mejora" : "Disminución"}
@@ -507,7 +529,8 @@ export default function PanelPage() {
 																		Promedio actual:
 																	</span>
 																	<span className="font-semibold">
-																		{improvement.currentAvg.toFixed(2)} {unitName}
+																		{improvement.currentAvg.toFixed(2)}{" "}
+																		{unitName}
 																	</span>
 																</div>
 																<div className="flex justify-between">
@@ -515,7 +538,8 @@ export default function PanelPage() {
 																		Promedio anterior:
 																	</span>
 																	<span className="font-semibold">
-																		{improvement.previousAvg.toFixed(2)} {unitName}
+																		{improvement.previousAvg.toFixed(2)}{" "}
+																		{unitName}
 																	</span>
 																</div>
 															</div>
@@ -524,6 +548,126 @@ export default function PanelPage() {
 												);
 											})}
 										</div>
+
+										{/* Chart */}
+										<Card className="border-2">
+											<CardHeader>
+												<CardTitle>Comparación de Períodos</CardTitle>
+												<CardDescription>
+													{PERIOD_LABELS[improvementPeriod]} vs Período anterior
+													{unidadMedida && ` (${unidadMedida})`}
+												</CardDescription>
+											</CardHeader>
+											<CardContent className="space-y-4">
+												{/* Alerta explicativa */}
+												<Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
+													<BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+													<AlertTitle className="text-blue-900 dark:text-blue-100">
+														¿Qué muestra esta gráfica?
+													</AlertTitle>
+													<AlertDescription className="text-blue-800 dark:text-blue-200">
+														{getChartExplanation()}
+													</AlertDescription>
+												</Alert>
+												<div className="h-[500px]">
+													<ChartContainer
+														className="h-full w-full"
+														config={chartConfig}
+													>
+														<ResponsiveContainer height="100%" width="100%">
+															<BarChart
+																data={chartData}
+																layout="vertical"
+																margin={{
+																	top: 20,
+																	right: 30,
+																	left: 20,
+																	bottom: 5,
+																}}
+															>
+																<XAxis
+																	label={{
+																		value: unidadMedida
+																			? `Valor (${unidadMedida})`
+																			: "Valor",
+																		position: "insideBottom",
+																		offset: -5,
+																		style: { textAnchor: "middle" },
+																	}}
+																	tick={{ fontSize: 12 }}
+																	type="number"
+																/>
+																<YAxis
+																	dataKey="name"
+																	tick={{ fontSize: 12 }}
+																	type="category"
+																	width={120}
+																/>
+																<ChartTooltip
+																	content={({ active, payload }) => {
+																		if (
+																			active &&
+																			payload &&
+																			payload.length > 0 &&
+																			payload[0]
+																		) {
+																			const data = payload[0].payload;
+																			return (
+																				<div className="rounded-lg border bg-background p-3 shadow-md">
+																					<p className="mb-2 font-semibold">
+																						{data.name}
+																					</p>
+																					{payload.map((entry) => {
+																						if (!entry) return null;
+																						return (
+																							<div
+																								className="flex items-center gap-2"
+																								key={entry.dataKey}
+																							>
+																								<div
+																									className="h-3 w-3 rounded"
+																									style={{
+																										backgroundColor:
+																											entry.color,
+																									}}
+																								/>
+																								<span className="text-sm">
+																									{entry.dataKey === "actual"
+																										? `${PERIOD_LABELS[improvementPeriod]}: `
+																										: "Período anterior: "}
+																									<strong>
+																										{Number(
+																											entry.value,
+																										).toFixed(2)}{" "}
+																										{data.unidad}
+																									</strong>
+																								</span>
+																							</div>
+																						);
+																					})}
+																				</div>
+																			);
+																		}
+																		return null;
+																	}}
+																/>
+																<Legend />
+																<Bar
+																	dataKey="actual"
+																	fill="#10b981"
+																	radius={[0, 8, 8, 0]}
+																/>
+																<Bar
+																	dataKey="anterior"
+																	fill="#6b7280"
+																	radius={[0, 8, 8, 0]}
+																/>
+															</BarChart>
+														</ResponsiveContainer>
+													</ChartContainer>
+												</div>
+											</CardContent>
+										</Card>
 									</div>
 								)}
 						</CardContent>
