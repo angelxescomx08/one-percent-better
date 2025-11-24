@@ -236,15 +236,69 @@ export const verification = pgTable("verification", {
 });
 
 // -------------------------------------------------
+// USER ACCESS (Stripe & Trial Control)
+// -------------------------------------------------
+export const userAccess = pgTable(
+  "user_access",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    // Control de Acceso
+    hasLifetimeAccess: boolean("has_lifetime_access")
+      .$defaultFn(() => false)
+      .notNull(),
+    trialEndsAt: timestamp("trial_ends_at").notNull(), // Fecha límite del trial
+
+    // Datos de Stripe
+    stripeCustomerId: text("stripe_customer_id"), // Para mapear webhooks de Stripe al usuario
+    stripePaymentIntentId: text("stripe_payment_intent_id"), // Referencia del pago único
+
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    // 1. Acceso rápido por ID de usuario (Middleware / Login check)
+    // Es unique porque un usuario solo debe tener un registro de acceso
+    unique("user_access_user_id_unique").on(table.userId),
+
+    // 2. Acceso rápido por ID de cliente de Stripe (Webhooks de Stripe)
+    unique("user_access_stripe_customer_idx").on(table.stripeCustomerId),
+
+    // 3. Consultas para Cron Jobs: "Buscar usuarios cuyo trial vence hoy y no han pagado"
+    index("user_access_trial_expiration_idx").on(
+      table.hasLifetimeAccess,
+      table.trialEndsAt,
+    ),
+
+    // 4. Consultas de soporte: Buscar transacción específica
+    index("user_access_payment_intent_idx").on(table.stripePaymentIntentId),
+
+    // 5. Analíticas: Cuántos usuarios tienen acceso de por vida
+    index("user_access_lifetime_status_idx").on(table.hasLifetimeAccess),
+  ],
+);
+
+// -------------------------------------------------
 // RELATIONS
 // -------------------------------------------------
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
   account: many(account),
   session: many(session),
   activities: many(activity),
   logs: many(activityLog),
   userActivities: many(userActivity),
+  access: one(userAccess, {
+    fields: [user.id],
+    references: [userAccess.userId],
+  }),
 }));
 
 export const categoryRelations = relations(category, ({ many }) => ({
@@ -303,4 +357,8 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, { fields: [session.userId], references: [user.id] }),
+}));
+
+export const userAccessRelations = relations(userAccess, ({ one }) => ({
+  user: one(user, { fields: [userAccess.userId], references: [user.id] }),
 }));
