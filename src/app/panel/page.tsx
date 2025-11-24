@@ -1,945 +1,596 @@
 "use client";
 
-import { BarChart3, Crown, Medal, TrendingUp, Trophy } from "lucide-react";
+import {
+  BarChart3,
+  Crown,
+  Medal,
+  TrendingDown,
+  TrendingUp,
+  Trophy,
+  Calendar,
+  ArrowUpRight,
+  Activity,
+} from "lucide-react";
 import { useState } from "react";
 import {
-	Area,
-	AreaChart,
-	Bar,
-	BarChart,
-	Legend,
-	ResponsiveContainer,
-	XAxis,
-	YAxis,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "~/components/ui/card";
-import { ChartContainer, ChartTooltip } from "~/components/ui/chart";
+import { ChartContainer } from "~/components/ui/chart";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 
+// --- Constantes y Tipos ---
+
 type Period = "yesterday" | "week" | "month" | "year" | "all";
 
 const PERIOD_LABELS: Record<Period, string> = {
-	yesterday: "Ayer",
-	week: "Última semana",
-	month: "Último mes",
-	year: "Último año",
-	all: "Desde siempre",
+  yesterday: "Ayer",
+  week: "Semana",
+  month: "Mes",
+  year: "Año",
+  all: "Histórico",
 };
 
-const RANK_ICONS = [Crown, Trophy, Medal];
+// Estilos para los rankings (Oro, Plata, Bronce)
+const RANK_STYLES = [
+  {
+    icon: Crown,
+    color: "text-amber-400",
+    bg: "bg-amber-400/10",
+    border: "border-amber-400/30",
+    gradient: "from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/10",
+    shadow: "shadow-amber-900/10",
+  },
+  {
+    icon: Medal,
+    color: "text-slate-400",
+    bg: "bg-slate-400/10",
+    border: "border-slate-400/30",
+    gradient: "from-slate-50 to-gray-50 dark:from-slate-800/30 dark:to-gray-900/10",
+    shadow: "shadow-slate-900/10",
+  },
+  {
+    icon: Medal,
+    color: "text-orange-500",
+    bg: "bg-orange-500/10",
+    border: "border-orange-500/30",
+    gradient: "from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/10",
+    shadow: "shadow-orange-900/10",
+  },
+];
+
+// Estilo por defecto para puestos > 3
+const DEFAULT_RANK_STYLE = {
+  icon: Trophy,
+  color: "text-blue-500",
+  bg: "bg-blue-500/10",
+  border: "border-slate-200 dark:border-slate-800",
+  gradient: "from-white to-slate-50 dark:from-slate-950 dark:to-slate-900",
+  shadow: "shadow-sm",
+};
 
 export default function PanelPage() {
-	const [activeTab, setActiveTab] = useState<"rankings" | "improvements">(
-		"rankings",
-	);
-	const [rankingPeriod, setRankingPeriod] = useState<Period>("week");
-	const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
-		null,
-	);
-	const [improvementPeriod, setImprovementPeriod] = useState<Period>("week");
+  const [activeTab, setActiveTab] = useState<"rankings" | "improvements">("rankings");
+  const [rankingPeriod, setRankingPeriod] = useState<Period>("week");
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [improvementPeriod, setImprovementPeriod] = useState<Period>("week");
 
-	// Query para obtener top rankings
-	const { data: topRankingsData, isLoading: isLoadingTopRankings } =
-		api.activity.getTopRankings.useQuery(
-			{
-				period: rankingPeriod,
-			},
-			{
-				enabled: activeTab === "rankings",
-			},
-		);
+  // --- Queries TRPC ---
+  const { data: topRankingsData, isLoading: isLoadingTopRankings } =
+    api.activity.getTopRankings.useQuery(
+      { period: rankingPeriod },
+      { enabled: activeTab === "rankings" }
+    );
 
-	// Query para obtener tabla completa de ranking de una actividad
-	const { data: rankingTableData, isLoading: isLoadingRankingTable } =
-		api.activity.getRankingTable.useQuery(
-			{
-				activityId: selectedActivityId ?? "",
-				period: rankingPeriod,
-			},
-			{
-				enabled:
-					activeTab === "rankings" &&
-					!!selectedActivityId &&
-					selectedActivityId.length > 0,
-			},
-		);
+  const { data: rankingTableData, isLoading: isLoadingRankingTable } =
+    api.activity.getRankingTable.useQuery(
+      { activityId: selectedActivityId ?? "", period: rankingPeriod },
+      { enabled: activeTab === "rankings" && !!selectedActivityId }
+    );
 
-	// Query para mejoras porcentuales
-	const { data: improvementsData, isLoading: isLoadingImprovements } =
-		api.activity.getImprovementPercentage.useQuery(
-			{
-				period: improvementPeriod,
-			},
-			{
-				enabled: activeTab === "improvements",
-			},
-		);
+  const { data: improvementsData, isLoading: isLoadingImprovements } =
+    api.activity.getImprovementPercentage.useQuery(
+      { period: improvementPeriod },
+      { enabled: activeTab === "improvements" }
+    );
 
-	// Query para datos históricos de progreso
-	const { data: progressHistoryData, isLoading: isLoadingProgressHistory } =
-		api.activity.getProgressHistory.useQuery(
-			{
-				period: improvementPeriod,
-			},
-			{
-				enabled: activeTab === "improvements",
-			},
-		);
+  const { data: progressHistoryData, isLoading: isLoadingProgressHistory } =
+    api.activity.getProgressHistory.useQuery(
+      { period: improvementPeriod },
+      { enabled: activeTab === "improvements" }
+    );
 
-	// Query para ranking general
-	const { data: generalRankingData, isLoading: isLoadingGeneralRanking } =
-		api.activity.getGeneralRanking.useQuery(
-			{
-				period: rankingPeriod,
-			},
-			{
-				enabled: activeTab === "rankings",
-			},
-		);
+  const { data: generalRankingData, isLoading: isLoadingGeneralRanking } =
+    api.activity.getGeneralRanking.useQuery(
+      { period: rankingPeriod },
+      { enabled: activeTab === "rankings" }
+    );
 
-	// Preparar datos para el gráfico de mejoras
-	const chartData =
-		improvementsData?.map((imp) => {
-			const unitName = imp.unit.shortName ?? imp.unit.name;
-			return {
-				name: imp.activity.name,
-				actual: Number(imp.currentAvg.toFixed(2)),
-				anterior: Number(imp.previousAvg.toFixed(2)),
-				categoria: imp.category.name,
-				unidad: unitName,
-			};
-		}) ?? [];
+  // --- Preparación de datos ---
+  const chartData =
+    improvementsData?.map((imp) => ({
+      name: imp.activity.name,
+      actual: Number(imp.currentAvg.toFixed(2)),
+      anterior: Number(imp.previousAvg.toFixed(2)),
+      categoria: imp.category.name,
+      // Usamos short_name si existe, sino name
+      unidad: imp.unit.shortName ?? imp.unit.name,
+    })) ?? [];
 
-	// Obtener la unidad de medida (asumiendo que todas las actividades usan la misma unidad o la primera)
-	const unidadMedida =
-		improvementsData && improvementsData.length > 0
-			? (improvementsData[0]?.unit.shortName ?? improvementsData[0]?.unit.name)
-			: "";
+  const chartConfig = {
+    actual: { label: "Actual", color: "#10b981" },
+    anterior: { label: "Anterior", color: "#94a3b8" },
+  };
 
-	// Función para generar mensaje explicativo personalizado
-	const getChartExplanation = () => {
-		if (!improvementsData || improvementsData.length === 0) return "";
+  // --- Renderizado ---
+  return (
+    <div className="min-h-screen w-full bg-slate-50/50 p-4 dark:bg-black md:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        
+        {/* Header & Controls */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+              Panel de Rendimiento
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Monitorea tu progreso y clasificación en tiempo real.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+            {(Object.keys(PERIOD_LABELS) as Period[]).map((period) => {
+              const currentPeriod = activeTab === "rankings" ? rankingPeriod : improvementPeriod;
+              const setPeriod = activeTab === "rankings" ? setRankingPeriod : setImprovementPeriod;
+              const isActive = currentPeriod === period;
+              return (
+                <button
+                  key={period}
+                  onClick={() => setPeriod(period)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                  }`}
+                >
+                  {PERIOD_LABELS[period]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-		// Obtener categorías y unidades únicas
-		const categorias = new Set(
-			improvementsData.map((imp) => imp.category.name),
-		);
-		const unidades = new Set(
-			improvementsData.map((imp) => imp.unit.shortName ?? imp.unit.name),
-		);
+        {/* Tabs Principales */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "rankings" | "improvements")}
+          className="space-y-6"
+        >
+          <TabsList className="grid w-full max-w-[400px] grid-cols-2 bg-slate-200/50 p-1 dark:bg-slate-900/50">
+            <TabsTrigger value="rankings" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Trophy className="mr-2 h-4 w-4" />
+              Rankings
+            </TabsTrigger>
+            <TabsTrigger value="improvements" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Progreso
+            </TabsTrigger>
+          </TabsList>
 
-		const categoriasArray = Array.from(categorias);
-		const unidadesArray = Array.from(unidades);
+          {/* === RANKINGS TAB === */}
+          <TabsContent value="rankings" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            
+            {/* Grid Layout: Izquierda (Cartas) - Derecha (Tabla General) */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              
+              {/* Columna Izquierda: Top Rankings Cards (2/3 ancho) */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30">
+                    <Crown className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Tus Mejores Rankings</h2>
+                </div>
 
-		// Mensaje base
-		let mensaje = `Esta gráfica compara tu rendimiento promedio del ${PERIOD_LABELS[improvementPeriod].toLowerCase()} con el período anterior. `;
+                {isLoadingTopRankings ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-44 rounded-2xl" />)}
+                  </div>
+                ) : !topRankingsData?.length ? (
+                   <Alert>
+                    <AlertTitle>Sin actividad</AlertTitle>
+                    <AlertDescription>No tienes rankings registrados en este periodo.</AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {topRankingsData.map((ranking, index) => {
+                      const style = RANK_STYLES[index] || DEFAULT_RANK_STYLE;
+                      const RankIcon = style.icon;
+                      
+                      return (
+                        <Card
+                          key={ranking.activity.id}
+                          onClick={() => setSelectedActivityId(ranking.activity.id)}
+                          className={`group relative cursor-pointer overflow-hidden border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${style.border} bg-linear-to-br ${style.gradient}`}
+                        >
+                          {/* Marca de agua decorativa */}
+                          <RankIcon className="absolute -right-6 -top-6 h-32 w-32 opacity-[0.03] rotate-12 transition-transform group-hover:scale-110 group-hover:opacity-[0.07]" />
+                          
+                          <CardHeader className="relative pb-2">
+                            <div className="flex justify-between items-start">
+                              <Badge variant="outline" className="bg-white/40 backdrop-blur-sm border-white/20 dark:bg-black/20">
+                                {ranking.category.name}
+                              </Badge>
+                              <div className={`flex h-10 w-10 items-center justify-center rounded-full shadow-inner ${style.bg} ${style.color}`}>
+                                <RankIcon className="h-6 w-6" />
+                              </div>
+                            </div>
+                            <CardTitle className="mt-2 text-lg line-clamp-1">{ranking.activity.name}</CardTitle>
+                          </CardHeader>
+                          
+                          <CardContent className="relative">
+                            <div className="flex items-end justify-between">
+                              <div>
+                                <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                  Mejor Marca
+                                </p>
+                                <div className="mt-1 flex items-baseline gap-1">
+                                  <span className="text-2xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white">
+                                    {Number(ranking.userBestValue).toLocaleString("es-ES")}
+                                  </span>
+                                  <span className="text-sm font-medium text-slate-500">
+                                    {ranking.unit.shortName ?? ranking.unit.name}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                  Ranking
+                                </p>
+                                <div className="mt-1 flex items-center justify-end gap-1">
+                                  <span className="text-3xl font-black text-slate-900 dark:text-white">
+                                    #{ranking.position}
+                                  </span>
+                                  <span className="text-sm text-slate-400 font-medium">/ {ranking.totalUsers}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* Detalle de Ranking (Si hay selección) */}
+                {selectedActivityId && (
+                  <Card className="overflow-hidden border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-left-4">
+                    <CardHeader className="bg-slate-50/50 border-b dark:bg-slate-900/50">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle>Top Usuarios: {rankingTableData?.activity.name}</CardTitle>
+                          <CardDescription>Tabla de líderes específica para esta actividad</CardDescription>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedActivityId(null)}>Cerrar</Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="max-h-[300px] overflow-auto">
+                        <Table>
+                          <TableHeader className="bg-slate-50 sticky top-0 z-10 dark:bg-slate-950">
+                            <TableRow>
+                              <TableHead className="w-[60px] text-center">#</TableHead>
+                              <TableHead>Atleta</TableHead>
+                              <TableHead className="text-right">Marca ({rankingTableData?.unit.shortName})</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rankingTableData?.rankings.map((r) => (
+                              <TableRow key={r.userId} className={r.userId === rankingTableData.currentUserId ? "bg-blue-50/50 dark:bg-blue-900/10" : ""}>
+                                <TableCell className="text-center font-bold text-slate-500">{r.position}</TableCell>
+                                <TableCell className="font-medium">
+                                  {r.userName} {r.userId === rankingTableData.currentUserId && <Badge className="ml-2 h-5 text-[10px]">Tú</Badge>}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">{Number(r.bestValue).toFixed(2)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
 
-		// Personalización por categoría
-		if (categoriasArray.length === 1) {
-			mensaje += `Las actividades mostradas pertenecen a la categoría "${categoriasArray[0]}". `;
-		} else if (categoriasArray.length > 1) {
-			mensaje += `Se muestran actividades de ${categoriasArray.length} categorías diferentes. `;
-		}
+              {/* Columna Derecha: Ranking General (1/3 ancho) */}
+              <div className="lg:col-span-1">
+                <Card className="h-full border-slate-200 shadow-sm dark:border-slate-800 flex flex-col">
+                  <CardHeader className="border-b bg-slate-50/40 pb-4 dark:bg-slate-900/40">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Trophy className="h-4 w-4 text-purple-500" />
+                      <h3 className="font-semibold text-slate-900 dark:text-white">Clasificación General</h3>
+                    </div>
+                    <CardDescription className="text-xs">
+                      Puntuación acumulada en todas las actividades.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0 flex-1">
+                    {isLoadingGeneralRanking ? (
+                      <div className="p-4 space-y-2">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ) : (
+                      <div className="relative overflow-hidden h-full">
+                        {/* Tabla con scroll interno si es muy larga */}
+                        <div className="max-h-[600px] overflow-auto custom-scrollbar">
+                          <Table>
+                            <TableHeader className="sticky top-0 z-20 bg-white shadow-sm dark:bg-slate-950">
+                              <TableRow className="border-b-2 border-slate-100 dark:border-slate-800">
+                                <TableHead className="w-12 text-center text-xs font-bold uppercase text-slate-400">Rank</TableHead>
+                                <TableHead className="text-xs font-bold uppercase text-slate-400">Usuario</TableHead>
+                                <TableHead className="text-right text-xs font-bold uppercase text-slate-400">Puntos</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {generalRankingData?.rankings.map((ranking, i) => {
+                                const isMe = ranking.userId === generalRankingData.currentUserId;
+                                const isTop3 = i < 3;
+                                
+                                return (
+                                  <TableRow 
+                                    key={ranking.userId} 
+                                    className={`
+                                      group border-b border-slate-50 transition-colors dark:border-slate-900
+                                      ${isMe ? "bg-indigo-50/60 dark:bg-indigo-950/20 hover:bg-indigo-100/60" : "hover:bg-slate-50 dark:hover:bg-slate-900"}
+                                    `}
+                                  >
+                                    <TableCell className="text-center p-3">
+                                      <div className={`
+                                        mx-auto flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold
+                                        ${isTop3 ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'}
+                                      `}>
+                                        {ranking.position}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="p-3">
+                                      <div className="flex flex-col">
+                                        <span className={`font-medium text-sm ${isMe ? 'text-indigo-700 dark:text-indigo-400' : ''}`}>
+                                          {ranking.userName}
+                                        </span>
+                                        {isMe && <span className="text-[10px] text-indigo-500 font-medium">Tú</span>}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right p-3">
+                                      <Badge variant="secondary" className="font-mono font-normal">
+                                        {ranking.totalScore.toLocaleString("es-ES", { maximumFractionDigits: 0 })}
+                                      </Badge>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
-		// Personalización por unidad de medida
-		if (unidadesArray.length === 1) {
-			mensaje += `Los valores se miden en ${unidadesArray[0]}. `;
-		} else if (unidadesArray.length > 1) {
-			mensaje += `Se utilizan diferentes unidades de medida (${unidadesArray.join(", ")}). `;
-		}
+          {/* === IMPROVEMENTS TAB === */}
+          <TabsContent value="improvements" className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            
+            {/* KPI Cards de Resumen */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {isLoadingImprovements ? (
+                [1,2,3,4].map(i => <Skeleton key={i} className="h-32 w-full rounded-xl"/>)
+              ) : (
+                improvementsData?.slice(0, 4).map((imp) => {
+                  const isPositive = imp.improvementPercentage > 0;
+                  const unit = imp.unit.shortName ?? imp.unit.name;
+                  return (
+                    <Card key={imp.activity.id} className="overflow-hidden border-l-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800" style={{ borderLeftColor: isPositive ? '#10b981' : '#f43f5e' }}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-2">
+                          <p className="font-medium text-sm text-slate-500 truncate" title={imp.activity.name}>{imp.activity.name}</p>
+                          {isPositive 
+                            ? <div className="rounded-full bg-emerald-100 p-1 text-emerald-600 dark:bg-emerald-900/30"><ArrowUpRight className="h-3 w-3" /></div>
+                            : <div className="rounded-full bg-rose-100 p-1 text-rose-600 dark:bg-rose-900/30"><TrendingDown className="h-3 w-3" /></div>
+                          }
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <h3 className="text-2xl font-bold tracking-tight">
+                            {Math.abs(imp.improvementPercentage).toFixed(1)}%
+                          </h3>
+                          <span className={`text-xs font-bold uppercase ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {isPositive ? 'Mejora' : 'Baja'}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-400">
+                          {imp.currentAvg} {unit} (vs {imp.previousAvg})
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
 
-		mensaje += `La barra verde representa el promedio del período actual, mientras que la barra gris muestra el promedio del período anterior.`;
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              
+              {/* Gráfico 1: Evolución */}
+              <Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-emerald-500" />
+                    Evolución del Rendimiento
+                  </CardTitle>
+                  <CardDescription>Tu promedio a lo largo del tiempo</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 min-h-[350px] p-2 sm:p-6">
+                  <div className="h-[300px] w-full min-w-0"> {/* min-w-0 evita overflow en grid */}
+                    {isLoadingProgressHistory ? <Skeleton className="h-full w-full" /> : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={progressHistoryData?.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.6} />
+                          <XAxis 
+                            dataKey="date" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 11, fill: '#94a3b8' }} 
+                            dy={10}
+                            minTickGap={30}
+                          />
+                          <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fontSize: 11, fill: '#94a3b8' }} 
+                          />
+                          <Tooltip 
+                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                            formatter={(value: number) => [`${value.toFixed(2)} pts`, "Promedio"]}
+                            labelStyle={{ color: '#64748b', marginBottom: '0.25rem' }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="value" 
+                            stroke="#10b981" 
+                            strokeWidth={2.5} 
+                            fill="url(#colorVal)" 
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-		return mensaje;
-	};
+              {/* Gráfico 2: Comparativa Barras */}
+              <Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-blue-500" />
+                    Comparativa: {PERIOD_LABELS[improvementPeriod]}
+                  </CardTitle>
+                  <CardDescription>Actual vs Anterior por actividad</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 min-h-[350px] p-2 sm:p-6">
+                  <div className="h-[300px] w-full min-w-0"> {/* min-w-0 esencial para responsive */}
+                    <ChartContainer config={chartConfig} className="h-full w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                          data={chartData} 
+                          layout="vertical" 
+                          margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+                          barCategoryGap="20%"
+                        >
+                          <CartesianGrid horizontal={false} stroke="#e2e8f0" opacity={0.6} />
+                          <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            width={100} 
+                            tick={{ fontSize: 11, fill: '#64748b' }} 
+                            axisLine={false}
+                            tickLine={false}
+                            // Truco para truncar texto largo en YAxis si es necesario
+                            tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                          />
+                          <XAxis type="number" hide />
+                          <Tooltip
+                            cursor={{ fill: 'transparent' }}
+                            content={({ active, payload }) => {
+                              if (
+                                active &&
+                                payload &&
+                                Array.isArray(payload) &&
+                                payload.length > 1 &&
+                                payload[0]?.payload &&
+                                payload[0]?.payload.name &&
+                                payload[0]?.payload.unidad
+                              ) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="rounded-lg border bg-white p-3 shadow-lg ring-1 ring-black/5 dark:bg-slate-900 dark:border-slate-800">
+                                    <p className="mb-2 font-semibold text-sm border-b pb-1 dark:border-slate-800">{data.name}</p>
+                                    <div className="space-y-1.5 text-xs">
+                                      <div className="flex justify-between gap-4">
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                                          <span className="text-slate-500">Actual:</span>
+                                        </div>
+                                        <span className="font-mono font-medium">
+                                          {payload[0]?.value} {data.unidad}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between gap-4">
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-2 w-2 rounded-full bg-slate-400" />
+                                          <span className="text-slate-500">Anterior:</span>
+                                        </div>
+                                        <span className="font-mono font-medium">
+                                          {payload[1]?.value} {data.unidad}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                          <Bar dataKey="actual" fill="#10b981" radius={[0, 4, 4, 0]} barSize={12} />
+                          <Bar dataKey="anterior" fill="#cbd5e1" radius={[0, 4, 4, 0]} barSize={12} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
-	const chartConfig = {
-		actual: {
-			label: `${PERIOD_LABELS[improvementPeriod]} (${unidadMedida})`,
-			color: "#10b981", // Verde esmeralda
-		},
-		anterior: {
-			label: `Período anterior (${unidadMedida})`,
-			color: "#6b7280", // Gris
-		},
-	};
-
-	return (
-		<div className="mx-auto max-w-7xl space-y-6 py-6">
-			{/* Header */}
-			<div>
-				<h1 className="mb-2 font-bold text-3xl">Panel de Rendimiento</h1>
-				<p className="text-muted-foreground text-sm">
-					Revisa tus rankings y tu progreso en diferentes actividades
-				</p>
-			</div>
-
-			{/* Tabs */}
-			<Tabs
-				className="w-full"
-				defaultValue="rankings"
-				onValueChange={(value) =>
-					setActiveTab(value as "rankings" | "improvements")
-				}
-			>
-				<TabsList className="mb-6">
-					<TabsTrigger value="rankings">
-						<Trophy className="mr-2 h-4 w-4" />
-						Rankings
-					</TabsTrigger>
-					<TabsTrigger value="improvements">
-						<TrendingUp className="mr-2 h-4 w-4" />
-						Mejoras
-					</TabsTrigger>
-				</TabsList>
-
-				{/* Rankings Tab */}
-				<TabsContent className="space-y-6" value="rankings">
-					<Card className="border-2 shadow-lg">
-						<CardHeader className="bg-linear-to-r from-purple-500/10 to-blue-500/10 pb-4">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-3">
-									<div className="rounded-full bg-linear-to-br from-purple-500 to-blue-500 p-3">
-										<Trophy className="h-6 w-6 text-white" />
-									</div>
-									<div>
-										<CardTitle className="font-bold text-2xl">
-											Top 5 Rankings
-										</CardTitle>
-										<CardDescription>
-											Tus mejores posiciones en diferentes categorías
-										</CardDescription>
-									</div>
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent className="pt-6">
-							{/* Selector de período */}
-							<div className="mb-6 flex flex-wrap gap-2">
-								{(Object.keys(PERIOD_LABELS) as Period[]).map((period) => (
-									<Button
-										key={period}
-										onClick={() => setRankingPeriod(period)}
-										size="sm"
-										variant={rankingPeriod === period ? "default" : "outline"}
-									>
-										{PERIOD_LABELS[period]}
-									</Button>
-								))}
-							</div>
-
-							{/* Loading */}
-							{isLoadingTopRankings && (
-								<div className="space-y-4">
-									{Array.from(
-										{ length: 5 },
-										(_, i) => `ranking-skeleton-${i}`,
-									).map((key) => (
-										<Skeleton className="h-24 w-full" key={key} />
-									))}
-								</div>
-							)}
-
-							{/* No data */}
-							{!isLoadingTopRankings &&
-								(!topRankingsData || topRankingsData.length === 0) && (
-									<Alert>
-										<AlertTitle>No hay datos de ranking</AlertTitle>
-										<AlertDescription>
-											No se encontraron rankings para el período seleccionado.
-										</AlertDescription>
-									</Alert>
-								)}
-
-							{/* Top Rankings Cards */}
-							{!isLoadingTopRankings &&
-								topRankingsData &&
-								topRankingsData.length > 0 && (
-									<div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-										{topRankingsData.map((ranking, index) => {
-											const RankIcon = RANK_ICONS[index] ?? Medal;
-											const unitName =
-												ranking.unit.shortName ?? ranking.unit.name;
-
-											return (
-												<Card
-													className={`cursor-pointer border-2 transition-all hover:shadow-lg ${
-														index === 0
-															? "border-yellow-400 bg-linear-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20"
-															: index === 1
-																? "border-gray-300 bg-linear-to-br from-gray-50 to-slate-50 dark:from-gray-950/20 dark:to-slate-950/20"
-																: index === 2
-																	? "border-amber-600 bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20"
-																	: "border-blue-300 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20"
-													}`}
-													key={ranking.activity.id}
-													onClick={() =>
-														setSelectedActivityId(ranking.activity.id)
-													}
-												>
-													<CardHeader>
-														<div className="flex items-center gap-3">
-															<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-blue-500">
-																<RankIcon className="h-6 w-6 text-white" />
-															</div>
-															<div className="flex-1">
-																<CardTitle className="text-lg">
-																	{ranking.activity.name}
-																</CardTitle>
-																<Badge variant="secondary">
-																	{ranking.category.name}
-																</Badge>
-															</div>
-														</div>
-													</CardHeader>
-													<CardContent>
-														<div className="space-y-2">
-															<div>
-																<span className="text-muted-foreground text-sm">
-																	Mejor marca:{" "}
-																</span>
-																<span className="font-bold text-primary">
-																	{Number(ranking.userBestValue).toLocaleString(
-																		"es-ES",
-																		{
-																			maximumFractionDigits: 2,
-																		},
-																	)}{" "}
-																	{unitName}
-																</span>
-															</div>
-															<div className="text-muted-foreground text-sm">
-																Posición:{" "}
-																<span className="font-bold text-foreground">
-																	#{ranking.position}
-																</span>{" "}
-																de {ranking.totalUsers}
-															</div>
-														</div>
-													</CardContent>
-												</Card>
-											);
-										})}
-									</div>
-								)}
-
-							{/* Ranking General */}
-							<Card className="border-2">
-								<CardHeader>
-									<CardTitle>Ranking General</CardTitle>
-									<CardDescription>
-										Clasificación de todos los usuarios -{" "}
-										{PERIOD_LABELS[rankingPeriod]}
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									{isLoadingGeneralRanking && (
-										<Skeleton className="h-96 w-full" />
-									)}
-
-									{!isLoadingGeneralRanking &&
-										generalRankingData &&
-										generalRankingData.rankings.length > 0 && (
-											<Table>
-												<TableHeader>
-													<TableRow>
-														<TableHead className="w-16">#</TableHead>
-														<TableHead>Usuario</TableHead>
-														<TableHead className="text-right">
-															Puntuación Total
-														</TableHead>
-														<TableHead className="text-right">
-															Actividades
-														</TableHead>
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{generalRankingData.rankings.map((ranking, index) => {
-														const isCurrentUser =
-															ranking.userId ===
-															generalRankingData.currentUserId;
-														const isTopThree = index < 3;
-														const RankIcon =
-															isTopThree && RANK_ICONS[index]
-																? RANK_ICONS[index]
-																: null;
-
-														return (
-															<TableRow
-																className={`${
-																	isCurrentUser
-																		? "bg-primary/10 font-bold"
-																		: isTopThree
-																			? "bg-muted/50"
-																			: ""
-																}`}
-																key={ranking.userId}
-															>
-																<TableCell>
-																	<div className="flex items-center gap-2">
-																		{RankIcon && (
-																			<RankIcon className="h-4 w-4" />
-																		)}
-																		<span>{ranking.position}</span>
-																	</div>
-																</TableCell>
-																<TableCell>
-																	<div className="flex items-center gap-2">
-																		{ranking.userName}
-																		{isCurrentUser && (
-																			<Badge variant="default">Tú</Badge>
-																		)}
-																	</div>
-																</TableCell>
-																<TableCell className="text-right font-mono">
-																	{ranking.totalScore.toLocaleString("es-ES", {
-																		maximumFractionDigits: 2,
-																	})}
-																</TableCell>
-																<TableCell className="text-right">
-																	{ranking.activities.length}
-																</TableCell>
-															</TableRow>
-														);
-													})}
-												</TableBody>
-											</Table>
-										)}
-
-									{!isLoadingGeneralRanking &&
-										generalRankingData &&
-										generalRankingData.rankings.length === 0 && (
-											<Alert>
-												<AlertTitle>No hay datos</AlertTitle>
-												<AlertDescription>
-													No se encontraron rankings para el período
-													seleccionado.
-												</AlertDescription>
-											</Alert>
-										)}
-								</CardContent>
-							</Card>
-
-							{/* Ranking Table por Actividad */}
-							{selectedActivityId && (
-								<Card className="border-2">
-									<CardHeader>
-										<CardTitle>
-											{rankingTableData?.activity.name ?? "Cargando..."}
-										</CardTitle>
-										<CardDescription>
-											Tabla completa de rankings -{" "}
-											{PERIOD_LABELS[rankingPeriod]}
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										{isLoadingRankingTable && (
-											<Skeleton className="h-96 w-full" />
-										)}
-
-										{!isLoadingRankingTable &&
-											rankingTableData &&
-											rankingTableData.rankings.length > 0 && (
-												<Table>
-													<TableHeader>
-														<TableRow>
-															<TableHead className="w-16">#</TableHead>
-															<TableHead>Usuario</TableHead>
-															<TableHead className="text-right">
-																Mejor Marca
-															</TableHead>
-														</TableRow>
-													</TableHeader>
-													<TableBody>
-														{rankingTableData.rankings.map((ranking, index) => {
-															const isCurrentUser =
-																ranking.userId ===
-																rankingTableData.currentUserId;
-															const isTopThree = index < 3;
-															const unitName =
-																rankingTableData.unit.shortName ??
-																rankingTableData.unit.name;
-															const RankIcon =
-																isTopThree && RANK_ICONS[index]
-																	? RANK_ICONS[index]
-																	: null;
-
-															return (
-																<TableRow
-																	className={`${
-																		isCurrentUser
-																			? "bg-primary/10 font-bold"
-																			: isTopThree
-																				? "bg-muted/50"
-																				: ""
-																	}`}
-																	key={ranking.userId}
-																>
-																	<TableCell>
-																		<div className="flex items-center gap-2">
-																			{RankIcon && (
-																				<RankIcon className="h-4 w-4" />
-																			)}
-																			<span>{ranking.position}</span>
-																		</div>
-																	</TableCell>
-																	<TableCell>
-																		<div className="flex items-center gap-2">
-																			{ranking.userName}
-																			{isCurrentUser && (
-																				<Badge variant="default">Tú</Badge>
-																			)}
-																		</div>
-																	</TableCell>
-																	<TableCell className="text-right font-mono">
-																		{ranking.bestValue.toLocaleString("es-ES", {
-																			maximumFractionDigits: 2,
-																		})}{" "}
-																		{unitName}
-																	</TableCell>
-																</TableRow>
-															);
-														})}
-													</TableBody>
-												</Table>
-											)}
-
-										{!isLoadingRankingTable &&
-											rankingTableData &&
-											rankingTableData.rankings.length === 0 && (
-												<Alert>
-													<AlertTitle>No hay datos</AlertTitle>
-													<AlertDescription>
-														No se encontraron rankings para esta actividad en el
-														período seleccionado.
-													</AlertDescription>
-												</Alert>
-											)}
-									</CardContent>
-								</Card>
-							)}
-						</CardContent>
-					</Card>
-				</TabsContent>
-
-				{/* Improvements Tab */}
-				<TabsContent className="space-y-6" value="improvements">
-					<Card className="border-2 shadow-lg">
-						<CardHeader className="bg-linear-to-r from-green-500/10 to-emerald-500/10 pb-4">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-3">
-									<div className="rounded-full bg-linear-to-br from-green-500 to-emerald-500 p-3">
-										<TrendingUp className="h-6 w-6 text-white" />
-									</div>
-									<div>
-										<CardTitle className="font-bold text-2xl">
-											Porcentaje de Mejora
-										</CardTitle>
-										<CardDescription>
-											Compara tu rendimiento con períodos anteriores
-										</CardDescription>
-									</div>
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent className="pt-6">
-							{/* Selector de período */}
-							<div className="mb-6 flex flex-wrap gap-2">
-								{(Object.keys(PERIOD_LABELS) as Period[]).map((period) => (
-									<Button
-										key={period}
-										onClick={() => setImprovementPeriod(period)}
-										size="sm"
-										variant={
-											improvementPeriod === period ? "default" : "outline"
-										}
-									>
-										{PERIOD_LABELS[period]}
-									</Button>
-								))}
-							</div>
-
-							{/* Loading */}
-							{isLoadingImprovements && <Skeleton className="h-96 w-full" />}
-
-							{/* No data */}
-							{!isLoadingImprovements &&
-								(!improvementsData || improvementsData.length === 0) && (
-									<Alert>
-										<AlertTitle>No hay datos de mejora</AlertTitle>
-										<AlertDescription>
-											No se encontraron datos de mejora para el período
-											seleccionado.
-										</AlertDescription>
-									</Alert>
-								)}
-
-							{/* Area Chart - Progreso Histórico (Primero) */}
-							{!isLoadingProgressHistory &&
-								progressHistoryData &&
-								progressHistoryData.data.length > 0 && (
-									<Card className="border-2 mb-6">
-										<CardHeader>
-											<CardTitle>Progreso por Período</CardTitle>
-											<CardDescription>
-												Evolución de tu rendimiento promedio -{" "}
-												{PERIOD_LABELS[improvementPeriod]}
-											</CardDescription>
-										</CardHeader>
-										<CardContent className="space-y-4">
-											{/* Alerta explicativa */}
-											<Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
-												<BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-												<AlertTitle className="text-blue-900 dark:text-blue-100">
-													¿Qué muestra esta gráfica?
-												</AlertTitle>
-												<AlertDescription className="text-blue-800 dark:text-blue-200">
-													Esta gráfica muestra tu progreso promedio a lo largo del
-													tiempo, agrupado por{" "}
-													{improvementPeriod === "yesterday"
-														? "hora"
-														: improvementPeriod === "week"
-															? "día"
-															: improvementPeriod === "month"
-																? "semana"
-																: "mes"}
-													. El área sombreada representa tu rendimiento promedio
-													en cada período.
-												</AlertDescription>
-											</Alert>
-											<div className="h-[500px]">
-												<ChartContainer
-													className="h-full w-full"
-													config={{
-														value: {
-															label: "Promedio",
-															color: "#10b981",
-														},
-													}}
-												>
-													<ResponsiveContainer height="100%" width="100%">
-														<AreaChart
-															data={progressHistoryData.data}
-															margin={{
-																top: 20,
-																right: 30,
-																left: 20,
-																bottom: 5,
-															}}
-														>
-															<defs>
-																<linearGradient
-																	id="colorValue"
-																	x1="0"
-																	y1="0"
-																	x2="0"
-																	y2="1"
-																>
-																	<stop
-																		offset="5%"
-																		stopColor="#10b981"
-																		stopOpacity={0.8}
-																	/>
-																	<stop
-																		offset="95%"
-																		stopColor="#10b981"
-																		stopOpacity={0.1}
-																	/>
-																</linearGradient>
-															</defs>
-															<XAxis
-																dataKey="date"
-																tick={{ fontSize: 12 }}
-																angle={-45}
-																textAnchor="end"
-																height={80}
-															/>
-															<YAxis
-																tick={{ fontSize: 12 }}
-																label={{
-																	value: "Promedio",
-																	angle: -90,
-																	position: "insideLeft",
-																}}
-															/>
-															<ChartTooltip
-																content={({ active, payload }) => {
-																	if (
-																		active &&
-																		payload &&
-																		payload.length > 0 &&
-																		payload[0]
-																	) {
-																		const data = payload[0].payload;
-																		return (
-																			<div className="rounded-lg border bg-background p-3 shadow-md">
-																				<p className="mb-2 font-semibold">
-																					{data.date}
-																				</p>
-																				<div className="flex items-center gap-2">
-																					<div className="h-3 w-3 rounded bg-[#10b981]" />
-																					<span className="text-sm">
-																						Promedio:{" "}
-																						<strong>
-																							{Number(data.value).toFixed(2)}
-																						</strong>
-																					</span>
-																				</div>
-																			</div>
-																		);
-																	}
-																	return null;
-																}}
-															/>
-															<Area
-																type="linear"
-																dataKey="value"
-																stroke="#10b981"
-																strokeWidth={2}
-																fillOpacity={1}
-																fill="url(#colorValue)"
-															/>
-														</AreaChart>
-													</ResponsiveContainer>
-												</ChartContainer>
-											</div>
-										</CardContent>
-									</Card>
-								)}
-
-							{!isLoadingProgressHistory &&
-								progressHistoryData &&
-								progressHistoryData.data.length === 0 && (
-									<Alert className="mb-6">
-										<AlertTitle>No hay datos de progreso</AlertTitle>
-										<AlertDescription>
-											No se encontraron datos de progreso para el período
-											seleccionado.
-										</AlertDescription>
-									</Alert>
-								)}
-
-							{/* Chart and Cards */}
-							{!isLoadingImprovements &&
-								improvementsData &&
-								improvementsData.length > 0 && (
-									<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-										{/* Improvement Cards */}
-										<div className="grid grid-cols-1 gap-4">
-											{improvementsData.map((improvement) => {
-												const unitName =
-													improvement.unit.shortName ?? improvement.unit.name;
-												const isPositive =
-													improvement.improvementPercentage > 0;
-
-												return (
-													<Card
-														className={`border-2 transition-all hover:shadow-lg ${
-															isPositive
-																? "border-green-400 bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20"
-																: "border-red-400 bg-linear-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20"
-														}`}
-														key={improvement.activity.id}
-													>
-														<CardHeader>
-															<div className="flex items-center justify-between">
-																<CardTitle className="text-lg">
-																	{improvement.activity.name}
-																</CardTitle>
-																<Badge variant="secondary">
-																	{improvement.category.name}
-																</Badge>
-															</div>
-															<CardDescription>{unitName}</CardDescription>
-														</CardHeader>
-														<CardContent className="space-y-3">
-															<div className="text-center">
-																<div
-																	className={`font-bold text-4xl ${
-																		isPositive
-																			? "text-green-600 dark:text-green-400"
-																			: "text-red-600 dark:text-red-400"
-																	}`}
-																>
-																	{isPositive ? "+" : ""}
-																	{improvement.improvementPercentage.toFixed(2)}
-																	%
-																</div>
-																<div className="text-muted-foreground text-sm">
-																	{isPositive ? "Mejora" : "Disminución"}
-																</div>
-															</div>
-
-															<div className="space-y-2 border-t pt-3 text-sm">
-																<div className="flex justify-between">
-																	<span className="text-muted-foreground">
-																		Promedio actual:
-																	</span>
-																	<span className="font-semibold">
-																		{improvement.currentAvg.toFixed(2)}{" "}
-																		{unitName}
-																	</span>
-																</div>
-																<div className="flex justify-between">
-																	<span className="text-muted-foreground">
-																		Promedio anterior:
-																	</span>
-																	<span className="font-semibold">
-																		{improvement.previousAvg.toFixed(2)}{" "}
-																		{unitName}
-																	</span>
-																</div>
-															</div>
-														</CardContent>
-													</Card>
-												);
-											})}
-										</div>
-
-										{/* Chart de Comparación */}
-										<Card className="border-2">
-											<CardHeader>
-												<CardTitle>Comparación de Períodos</CardTitle>
-												<CardDescription>
-													{PERIOD_LABELS[improvementPeriod]} vs Período anterior
-													{unidadMedida && ` (${unidadMedida})`}
-												</CardDescription>
-											</CardHeader>
-											<CardContent className="space-y-4">
-												{/* Alerta explicativa */}
-												<Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
-													<BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-													<AlertTitle className="text-blue-900 dark:text-blue-100">
-														¿Qué muestra esta gráfica?
-													</AlertTitle>
-													<AlertDescription className="text-blue-800 dark:text-blue-200">
-														{getChartExplanation()}
-													</AlertDescription>
-												</Alert>
-												<div className="h-[500px]">
-													<ChartContainer
-														className="h-full w-full"
-														config={chartConfig}
-													>
-														<ResponsiveContainer height="100%" width="100%">
-															<BarChart
-																data={chartData}
-																layout="vertical"
-																margin={{
-																	top: 20,
-																	right: 30,
-																	left: 20,
-																	bottom: 5,
-																}}
-															>
-																<XAxis
-																	label={{
-																		value: unidadMedida
-																			? `Valor (${unidadMedida})`
-																			: "Valor",
-																		position: "insideBottom",
-																		offset: -5,
-																		style: { textAnchor: "middle" },
-																	}}
-																	tick={{ fontSize: 12 }}
-																	type="number"
-																/>
-																<YAxis
-																	dataKey="name"
-																	tick={{ fontSize: 12 }}
-																	type="category"
-																	width={120}
-																/>
-																<ChartTooltip
-																	content={({ active, payload }) => {
-																		if (
-																			active &&
-																			payload &&
-																			payload.length > 0 &&
-																			payload[0]
-																		) {
-																			const data = payload[0].payload;
-																			return (
-																				<div className="rounded-lg border bg-background p-3 shadow-md">
-																					<p className="mb-2 font-semibold">
-																						{data.name}
-																					</p>
-																					{payload.map((entry) => {
-																						if (!entry) return null;
-																						return (
-																							<div
-																								className="flex items-center gap-2"
-																								key={entry.dataKey}
-																							>
-																								<div
-																									className="h-3 w-3 rounded"
-																									style={{
-																										backgroundColor:
-																											entry.color,
-																									}}
-																								/>
-																								<span className="text-sm">
-																									{entry.dataKey === "actual"
-																										? `${PERIOD_LABELS[improvementPeriod]}: `
-																										: "Período anterior: "}
-																									<strong>
-																										{Number(
-																											entry.value,
-																										).toFixed(2)}{" "}
-																										{data.unidad}
-																									</strong>
-																								</span>
-																							</div>
-																						);
-																					})}
-																				</div>
-																			);
-																		}
-																		return null;
-																	}}
-																/>
-																<Legend />
-																<Bar
-																	dataKey="actual"
-																	fill="#10b981"
-																	radius={[0, 8, 8, 0]}
-																/>
-																<Bar
-																	dataKey="anterior"
-																	fill="#6b7280"
-																	radius={[0, 8, 8, 0]}
-																/>
-															</BarChart>
-														</ResponsiveContainer>
-													</ChartContainer>
-												</div>
-											</CardContent>
-										</Card>
-									</div>
-								)}
-						</CardContent>
-					</Card>
-				</TabsContent>
-			</Tabs>
-		</div>
-	);
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
 }
