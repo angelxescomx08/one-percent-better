@@ -212,7 +212,7 @@ export default function PanelPage() {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               
               {/* Columna Izquierda: Top Rankings Cards (2/3 ancho) */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-1 space-y-6">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30">
                     <Crown className="h-5 w-5" />
@@ -230,7 +230,7 @@ export default function PanelPage() {
                     <AlertDescription>No tienes rankings registrados en este periodo.</AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-1">
                     {topRankingsData.map((ranking, index) => {
                       const style = RANK_STYLES[index] || DEFAULT_RANK_STYLE;
                       const RankIcon = style.icon;
@@ -331,7 +331,7 @@ export default function PanelPage() {
               </div>
 
               {/* Columna Derecha: Ranking General (1/3 ancho) */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-2">
                 <Card className="h-full border-slate-200 shadow-sm dark:border-slate-800 flex flex-col">
                   <CardHeader className="border-b bg-slate-50/40 pb-4 dark:bg-slate-900/40">
                     <div className="flex items-center gap-2 mb-1">
