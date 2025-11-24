@@ -177,7 +177,7 @@ export default function ActivityLogsPage() {
             </div>
             
             <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:justify-end">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <DatePicker
                   date={startDate}
                   onDateChange={handleStartDateChange}
