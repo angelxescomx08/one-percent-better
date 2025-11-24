@@ -2,14 +2,15 @@ import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Zap } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "~/components/ui/card";
 import { Field, FieldContent, FieldLabel } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
@@ -18,138 +19,181 @@ import { auth } from "~/server/better-auth";
 import { HydrateClient } from "~/trpc/server";
 
 async function signUpWithEmail(formData: FormData) {
-	"use server";
-	const name = formData.get("name") as string;
-	const email = formData.get("email") as string;
-	const password = formData.get("password") as string;
+  "use server";
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-	if (!name || !email || !password) {
-		throw new Error("Nombre, email y contraseña son requeridos");
-	}
+  if (!name || !email || !password) {
+    throw new Error("Nombre, email y contraseña son requeridos");
+  }
 
-	try {
-		await auth.api.signUpEmail({
-			body: {
-				name,
-				email,
-				password,
-			},
-			headers: await headers(),
-		});
-		redirect("/panel");
-	} catch (error) {
-		throw new Error(
-			error instanceof Error ? error.message : "Error al crear la cuenta",
-		);
-	}
+  try {
+    await auth.api.signUpEmail({
+      body: {
+        name,
+        email,
+        password,
+      },
+      headers: await headers(),
+    });
+    redirect("/panel");
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "Error al crear la cuenta",
+    );
+  }
 }
 
 async function signInWithGoogle() {
-	"use server";
-	const res = await auth.api.signInSocial({
-		body: {
-			provider: "google",
-			callbackURL: "/panel",
-		},
-	});
-	if (!res.url) {
-		throw new Error("No URL returned from signInSocial");
-	}
-	redirect(res.url);
+  "use server";
+  const res = await auth.api.signInSocial({
+    body: {
+      provider: "google",
+      callbackURL: "/panel",
+    },
+  });
+  if (!res.url) {
+    throw new Error("No URL returned from signInSocial");
+  }
+  redirect(res.url);
 }
 
 export default async function RegisterPage() {
-	return (
-		<HydrateClient>
-			<main className="flex min-h-screen flex-col items-center justify-center bg-linear-to-b from-[#2e026d] to-[#15162c] p-4">
-				<Card className="w-full max-w-md">
-					<CardHeader className="space-y-1">
-						<CardTitle className="text-center font-bold text-2xl">
-							Crear Cuenta
-						</CardTitle>
-						<CardDescription className="text-center">
-							Regístrate con tu correo y contraseña o con Google
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<form action={signUpWithEmail} className="space-y-4">
-							<Field>
-								<FieldLabel htmlFor="name">Nombre</FieldLabel>
-								<FieldContent>
-									<Input
-										id="name"
-										name="name"
-										placeholder="Tu nombre"
-										required
-										type="text"
-									/>
-								</FieldContent>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="email">Correo Electrónico</FieldLabel>
-								<FieldContent>
-									<Input
-										id="email"
-										name="email"
-										placeholder="correo@ejemplo.com"
-										required
-										type="email"
-									/>
-								</FieldContent>
-							</Field>
-							<Field>
-								<FieldLabel htmlFor="password">Contraseña</FieldLabel>
-								<FieldContent>
-									<Input
-										id="password"
-										name="password"
-										placeholder="••••••••"
-										required
-										type="password"
-									/>
-								</FieldContent>
-							</Field>
-							<Button className="w-full" type="submit">
-								Crear Cuenta
-							</Button>
-						</form>
+  return (
+    <HydrateClient>
+      {/* Fondo consistente con Login */}
+      <main className="relative flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 dark:bg-slate-950 overflow-hidden">
+        
+        {/* Decoración de fondo */}
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-indigo-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob dark:bg-indigo-500/20" />
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-violet-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000 dark:bg-violet-500/20" />
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000 dark:bg-purple-500/20" />
 
-						<div className="relative">
-							<div className="absolute inset-0 flex items-center">
-								<Separator />
-							</div>
-							<div className="relative flex justify-center text-xs uppercase">
-								<span className="bg-card px-2 text-muted-foreground">
-									O continúa con
-								</span>
-							</div>
-						</div>
+        <Card className="w-full max-w-md border-slate-200 shadow-xl dark:border-slate-800 z-10 animate-in fade-in zoom-in-95 duration-500">
+          <CardHeader className="space-y-4 pb-2">
+            
+            {/* LOGO BRANDING */}
+            <div className="flex justify-center mb-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/30">
+                <Zap className="h-7 w-7 fill-white text-white" />
+              </div>
+            </div>
 
-						<form action={signInWithGoogle}>
-							<Button className="w-full" type="submit" variant="outline">
-								<Image
-									alt="Google"
-									height={20}
-									src="/imgs/Logo-google-icon-PNG.png"
-									width={20}
-								/>
-								Continuar con Google
-							</Button>
-						</form>
-					</CardContent>
-					<CardFooter className="flex flex-col space-y-4">
-						<div className="text-center text-muted-foreground text-sm">
-							¿Ya tienes una cuenta?{" "}
-							<Link
-								className="text-primary underline-offset-4 hover:underline"
-								href="/"
-							>
-								Inicia sesión
-							</Link>
-						</div>
-					</CardFooter>
-				</Card>
-			</main>
-		</HydrateClient>
-	);
+            <div className="space-y-2 text-center">
+              <CardTitle className="font-bold text-2xl tracking-tight text-slate-900 dark:text-white">
+                Únete a OnePercent
+              </CardTitle>
+              <CardDescription className="text-base text-slate-500 dark:text-slate-400">
+                Crea tu cuenta y empieza a mejorar cada día.
+              </CardDescription>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <form action={signUpWithEmail} className="space-y-4">
+              <Field>
+                <FieldLabel htmlFor="name" className="text-slate-700 dark:text-slate-300">
+                  Nombre Completo
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="Ej. Juan Pérez"
+                    required
+                    type="text"
+                    className="h-11 bg-slate-50 dark:bg-slate-900/50"
+                  />
+                </FieldContent>
+              </Field>
+              
+              <Field>
+                <FieldLabel htmlFor="email" className="text-slate-700 dark:text-slate-300">
+                  Correo Electrónico
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="email"
+                    name="email"
+                    placeholder="tucorreo@ejemplo.com"
+                    required
+                    type="email"
+                    className="h-11 bg-slate-50 dark:bg-slate-900/50"
+                  />
+                </FieldContent>
+              </Field>
+              
+              <Field>
+                <FieldLabel htmlFor="password" className="text-slate-700 dark:text-slate-300">
+                  Contraseña
+                </FieldLabel>
+                <FieldContent>
+                  <Input
+                    id="password"
+                    name="password"
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                    type="password"
+                    className="h-11 bg-slate-50 dark:bg-slate-900/50"
+                  />
+                </FieldContent>
+              </Field>
+              
+              <Button 
+                className="w-full h-11 text-base bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-md shadow-indigo-500/20 transition-all hover:scale-[1.01]" 
+                type="submit"
+              >
+                Crear mi cuenta
+              </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="dark:bg-slate-800" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+                  O regístrate con
+                </span>
+              </div>
+            </div>
+
+            <form action={signInWithGoogle}>
+              <Button 
+                className="w-full h-11 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors" 
+                type="submit" 
+                variant="outline"
+              >
+                <div className="mr-2 flex h-5 w-5 items-center justify-center">
+                  <Image
+                    alt="Google"
+                    height={18}
+                    src="/imgs/Logo-google-icon-PNG.png"
+                    width={18}
+                  />
+                </div>
+                Google
+              </Button>
+            </form>
+          </CardContent>
+
+          <CardFooter className="flex flex-col space-y-4 border-t bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="text-center text-slate-500 text-sm dark:text-slate-400">
+              ¿Ya tienes una cuenta?{" "}
+              <Link
+                className="font-medium text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-400"
+                href="/"
+              >
+                Inicia sesión aquí
+              </Link>
+            </div>
+            <p className="text-center text-xs text-slate-400 dark:text-slate-500 px-4">
+               Al registrarte, aceptas nuestros Términos de Servicio y Política de Privacidad.
+            </p>
+          </CardFooter>
+        </Card>
+      </main>
+    </HydrateClient>
+  );
 }
