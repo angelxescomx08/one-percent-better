@@ -3,6 +3,8 @@
 import { BarChart3, Crown, Medal, TrendingUp, Trophy } from "lucide-react";
 import { useState } from "react";
 import {
+	Area,
+	AreaChart,
 	Bar,
 	BarChart,
 	Legend,
@@ -89,6 +91,28 @@ export default function PanelPage() {
 			},
 			{
 				enabled: activeTab === "improvements",
+			},
+		);
+
+	// Query para datos históricos de progreso
+	const { data: progressHistoryData, isLoading: isLoadingProgressHistory } =
+		api.activity.getProgressHistory.useQuery(
+			{
+				period: improvementPeriod,
+			},
+			{
+				enabled: activeTab === "improvements",
+			},
+		);
+
+	// Query para ranking general
+	const { data: generalRankingData, isLoading: isLoadingGeneralRanking } =
+		api.activity.getGeneralRanking.useQuery(
+			{
+				period: rankingPeriod,
+			},
+			{
+				enabled: activeTab === "rankings",
 			},
 		);
 
@@ -318,7 +342,104 @@ export default function PanelPage() {
 									</div>
 								)}
 
-							{/* Ranking Table */}
+							{/* Ranking General */}
+							<Card className="border-2">
+								<CardHeader>
+									<CardTitle>Ranking General</CardTitle>
+									<CardDescription>
+										Clasificación de todos los usuarios -{" "}
+										{PERIOD_LABELS[rankingPeriod]}
+									</CardDescription>
+								</CardHeader>
+								<CardContent>
+									{isLoadingGeneralRanking && (
+										<Skeleton className="h-96 w-full" />
+									)}
+
+									{!isLoadingGeneralRanking &&
+										generalRankingData &&
+										generalRankingData.rankings.length > 0 && (
+											<Table>
+												<TableHeader>
+													<TableRow>
+														<TableHead className="w-16">#</TableHead>
+														<TableHead>Usuario</TableHead>
+														<TableHead className="text-right">
+															Puntuación Total
+														</TableHead>
+														<TableHead className="text-right">
+															Actividades
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{generalRankingData.rankings.map((ranking, index) => {
+														const isCurrentUser =
+															ranking.userId ===
+															generalRankingData.currentUserId;
+														const isTopThree = index < 3;
+														const RankIcon =
+															isTopThree && RANK_ICONS[index]
+																? RANK_ICONS[index]
+																: null;
+
+														return (
+															<TableRow
+																className={`${
+																	isCurrentUser
+																		? "bg-primary/10 font-bold"
+																		: isTopThree
+																			? "bg-muted/50"
+																			: ""
+																}`}
+																key={ranking.userId}
+															>
+																<TableCell>
+																	<div className="flex items-center gap-2">
+																		{RankIcon && (
+																			<RankIcon className="h-4 w-4" />
+																		)}
+																		<span>{ranking.position}</span>
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<div className="flex items-center gap-2">
+																		{ranking.userName}
+																		{isCurrentUser && (
+																			<Badge variant="default">Tú</Badge>
+																		)}
+																	</div>
+																</TableCell>
+																<TableCell className="text-right font-mono">
+																	{ranking.totalScore.toLocaleString("es-ES", {
+																		maximumFractionDigits: 2,
+																	})}
+																</TableCell>
+																<TableCell className="text-right">
+																	{ranking.activities.length}
+																</TableCell>
+															</TableRow>
+														);
+													})}
+												</TableBody>
+											</Table>
+										)}
+
+									{!isLoadingGeneralRanking &&
+										generalRankingData &&
+										generalRankingData.rankings.length === 0 && (
+											<Alert>
+												<AlertTitle>No hay datos</AlertTitle>
+												<AlertDescription>
+													No se encontraron rankings para el período
+													seleccionado.
+												</AlertDescription>
+											</Alert>
+										)}
+								</CardContent>
+							</Card>
+
+							{/* Ranking Table por Actividad */}
 							{selectedActivityId && (
 								<Card className="border-2">
 									<CardHeader>
@@ -472,6 +593,151 @@ export default function PanelPage() {
 									</Alert>
 								)}
 
+							{/* Area Chart - Progreso Histórico (Primero) */}
+							{!isLoadingProgressHistory &&
+								progressHistoryData &&
+								progressHistoryData.data.length > 0 && (
+									<Card className="border-2 mb-6">
+										<CardHeader>
+											<CardTitle>Progreso por Período</CardTitle>
+											<CardDescription>
+												Evolución de tu rendimiento promedio -{" "}
+												{PERIOD_LABELS[improvementPeriod]}
+											</CardDescription>
+										</CardHeader>
+										<CardContent className="space-y-4">
+											{/* Alerta explicativa */}
+											<Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
+												<BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+												<AlertTitle className="text-blue-900 dark:text-blue-100">
+													¿Qué muestra esta gráfica?
+												</AlertTitle>
+												<AlertDescription className="text-blue-800 dark:text-blue-200">
+													Esta gráfica muestra tu progreso promedio a lo largo del
+													tiempo, agrupado por{" "}
+													{improvementPeriod === "yesterday"
+														? "hora"
+														: improvementPeriod === "week"
+															? "día"
+															: improvementPeriod === "month"
+																? "semana"
+																: "mes"}
+													. El área sombreada representa tu rendimiento promedio
+													en cada período.
+												</AlertDescription>
+											</Alert>
+											<div className="h-[500px]">
+												<ChartContainer
+													className="h-full w-full"
+													config={{
+														value: {
+															label: "Promedio",
+															color: "#10b981",
+														},
+													}}
+												>
+													<ResponsiveContainer height="100%" width="100%">
+														<AreaChart
+															data={progressHistoryData.data}
+															margin={{
+																top: 20,
+																right: 30,
+																left: 20,
+																bottom: 5,
+															}}
+														>
+															<defs>
+																<linearGradient
+																	id="colorValue"
+																	x1="0"
+																	y1="0"
+																	x2="0"
+																	y2="1"
+																>
+																	<stop
+																		offset="5%"
+																		stopColor="#10b981"
+																		stopOpacity={0.8}
+																	/>
+																	<stop
+																		offset="95%"
+																		stopColor="#10b981"
+																		stopOpacity={0.1}
+																	/>
+																</linearGradient>
+															</defs>
+															<XAxis
+																dataKey="date"
+																tick={{ fontSize: 12 }}
+																angle={-45}
+																textAnchor="end"
+																height={80}
+															/>
+															<YAxis
+																tick={{ fontSize: 12 }}
+																label={{
+																	value: "Promedio",
+																	angle: -90,
+																	position: "insideLeft",
+																}}
+															/>
+															<ChartTooltip
+																content={({ active, payload }) => {
+																	if (
+																		active &&
+																		payload &&
+																		payload.length > 0 &&
+																		payload[0]
+																	) {
+																		const data = payload[0].payload;
+																		return (
+																			<div className="rounded-lg border bg-background p-3 shadow-md">
+																				<p className="mb-2 font-semibold">
+																					{data.date}
+																				</p>
+																				<div className="flex items-center gap-2">
+																					<div className="h-3 w-3 rounded bg-[#10b981]" />
+																					<span className="text-sm">
+																						Promedio:{" "}
+																						<strong>
+																							{Number(data.value).toFixed(2)}
+																						</strong>
+																					</span>
+																				</div>
+																			</div>
+																		);
+																	}
+																	return null;
+																}}
+															/>
+															<Area
+																type="linear"
+																dataKey="value"
+																stroke="#10b981"
+																strokeWidth={2}
+																fillOpacity={1}
+																fill="url(#colorValue)"
+															/>
+														</AreaChart>
+													</ResponsiveContainer>
+												</ChartContainer>
+											</div>
+										</CardContent>
+									</Card>
+								)}
+
+							{!isLoadingProgressHistory &&
+								progressHistoryData &&
+								progressHistoryData.data.length === 0 && (
+									<Alert className="mb-6">
+										<AlertTitle>No hay datos de progreso</AlertTitle>
+										<AlertDescription>
+											No se encontraron datos de progreso para el período
+											seleccionado.
+										</AlertDescription>
+									</Alert>
+								)}
+
 							{/* Chart and Cards */}
 							{!isLoadingImprovements &&
 								improvementsData &&
@@ -549,7 +815,7 @@ export default function PanelPage() {
 											})}
 										</div>
 
-										{/* Chart */}
+										{/* Chart de Comparación */}
 										<Card className="border-2">
 											<CardHeader>
 												<CardTitle>Comparación de Períodos</CardTitle>

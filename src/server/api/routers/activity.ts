@@ -773,4 +773,277 @@ export const activityRouter = createTRPCRouter({
 
       return selectedImprovements.slice(0, 5);
     }),
+
+  getProgressHistory: protectedProcedure
+    .input(
+      z.object({
+        period: z.enum(["yesterday", "week", "month", "year", "all"]),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, session } = ctx;
+
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      let startDate: Date;
+
+      // Calcular fecha de inicio según el período
+      switch (input.period) {
+        case "yesterday": {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          startDate = new Date(yesterday);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "week": {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          startDate = new Date(weekAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "month": {
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          startDate = new Date(monthAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "year": {
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          startDate = new Date(yearAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "all":
+          startDate = new Date(0);
+          break;
+      }
+
+      // Obtener todas las actividades del usuario
+      const userActivities = await db
+        .select({
+          activity: activity,
+          category: category,
+          unit: unit,
+        })
+        .from(userActivity)
+        .innerJoin(activity, eq(userActivity.activityId, activity.id))
+        .innerJoin(category, eq(activity.categoryId, category.id))
+        .innerJoin(unit, eq(activity.unitId, unit.id))
+        .where(eq(userActivity.userId, session.user.id));
+
+      // Obtener todos los logs del usuario en el período
+      const logs = await db
+        .select({
+          activityId: activityLog.activityId,
+          date: activityLog.date,
+          value: activityLog.value,
+        })
+        .from(activityLog)
+        .where(
+          and(
+            eq(activityLog.userId, session.user.id),
+            gte(activityLog.date, startDate),
+            lte(activityLog.date, now),
+          ),
+        )
+        .orderBy(activityLog.date);
+
+      // Agrupar datos por período según el tipo seleccionado
+      const groupedData: Record<string, { date: string; value: number; count: number }> = {};
+
+      logs.forEach((log) => {
+        const logDate = new Date(log.date);
+        let key: string = "";
+
+        switch (input.period) {
+          case "yesterday":
+            // Agrupar por hora
+            key = logDate.toISOString().slice(0, 13) + ":00";
+            break;
+          case "week":
+            // Agrupar por día
+            key = logDate.toISOString().slice(0, 10);
+            break;
+          case "month":
+            // Agrupar por semana (lunes a domingo)
+            const weekStart = new Date(logDate);
+            weekStart.setDate(logDate.getDate() - logDate.getDay() + 1);
+            key = weekStart.toISOString().slice(0, 10);
+            break;
+          case "year":
+            // Agrupar por mes
+            key = logDate.toISOString().slice(0, 7);
+            break;
+          case "all":
+            // Agrupar por mes
+            key = logDate.toISOString().slice(0, 7);
+            break;
+          default:
+            key = logDate.toISOString().slice(0, 10);
+            break;
+        }
+
+        if (key) {
+          if (!groupedData[key]) {
+            groupedData[key] = { date: key, value: 0, count: 0 };
+          }
+          const group = groupedData[key]!;
+          group.value += Number(log.value);
+          group.count += 1;
+        }
+      });
+
+      // Calcular promedios y formatear
+      const chartData = Object.values(groupedData)
+        .map((item) => {
+          return {
+            date: item.date,
+            value: item.count > 0 ? Number((item.value / item.count).toFixed(2)) : 0,
+          };
+        })
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      return {
+        data: chartData,
+        activities: userActivities.map((ua) => ({
+          id: ua.activity.id,
+          name: ua.activity.name,
+          category: ua.category.name,
+          unit: ua.unit.shortName ?? ua.unit.name,
+        })),
+      };
+    }),
+
+  getGeneralRanking: protectedProcedure
+    .input(
+      z.object({
+        period: z.enum(["yesterday", "week", "month", "year", "all"]),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { db, session } = ctx;
+
+      // Calcular fechas según el período
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      let startDate: Date | undefined;
+
+      switch (input.period) {
+        case "yesterday": {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          startDate = new Date(yesterday);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "week": {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          startDate = new Date(weekAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "month": {
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          startDate = new Date(monthAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "year": {
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          startDate = new Date(yearAgo);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        }
+        case "all":
+          startDate = undefined;
+          break;
+      }
+
+      // Construir condiciones de fecha
+      const dateConditions: ReturnType<typeof gte>[] = [];
+      if (startDate) {
+        dateConditions.push(gte(activityLog.date, startDate));
+      }
+      dateConditions.push(lte(activityLog.date, now));
+
+      // Obtener todos los usuarios con sus mejores valores por actividad
+      const allUserLogs = await db
+        .select({
+          userId: activityLog.userId,
+          userName: user.name,
+          userEmail: user.email,
+          activityId: activityLog.activityId,
+          activityName: activity.name,
+          categoryName: category.name,
+          bestValue: sql<number>`MAX(${activityLog.value})::numeric`,
+        })
+        .from(activityLog)
+        .innerJoin(user, eq(activityLog.userId, user.id))
+        .innerJoin(activity, eq(activityLog.activityId, activity.id))
+        .innerJoin(category, eq(activity.categoryId, category.id))
+        .where(and(...dateConditions))
+        .groupBy(
+          activityLog.userId,
+          user.name,
+          user.email,
+          activityLog.activityId,
+          activity.name,
+          category.name,
+        );
+
+      // Agrupar por usuario y calcular puntuación total (suma de mejores valores)
+      const userScores: Record<
+        string,
+        {
+          userId: string;
+          userName: string;
+          userEmail: string;
+          totalScore: number;
+          activities: Array<{ activityId: string; activityName: string; categoryName: string; bestValue: number }>;
+        }
+      > = {};
+
+      allUserLogs.forEach((log) => {
+        if (!userScores[log.userId]) {
+          userScores[log.userId] = {
+            userId: log.userId,
+            userName: log.userName,
+            userEmail: log.userEmail,
+            totalScore: 0,
+            activities: [],
+          };
+        }
+        const userScore = userScores[log.userId];
+        if (userScore) {
+          const value = Number(log.bestValue);
+          userScore.totalScore += value;
+          userScore.activities.push({
+            activityId: log.activityId,
+            activityName: log.activityName,
+            categoryName: log.categoryName,
+            bestValue: value,
+          });
+        }
+      });
+
+      // Ordenar por puntuación total (descendente)
+      const sortedRankings = Object.values(userScores)
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .map((user, index) => ({
+          ...user,
+          position: index + 1,
+        }));
+
+      return {
+        rankings: sortedRankings,
+        currentUserId: session.user.id,
+      };
+    }),
 });
