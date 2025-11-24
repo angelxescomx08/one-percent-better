@@ -1,12 +1,27 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import {
+	ArrowLeft,
+	Info,
+	LayoutGrid,
+	Library,
+	Plus,
+	Ruler,
+	Type,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -32,6 +47,12 @@ import {
 	SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
 
 const createActivitySchema = z.object({
@@ -115,23 +136,16 @@ export default function CreateActivityPage() {
 		{ enabled: !!selectedCategoryId },
 	);
 
-	// Formularios para crear categoría y unidad
 	const categoryForm = useForm<CreateCategoryForm>({
 		resolver: zodResolver(createCategorySchema),
-		defaultValues: {
-			name: "",
-		},
+		defaultValues: { name: "" },
 	});
 
 	const unitForm = useForm<CreateUnitForm>({
 		resolver: zodResolver(createUnitSchema),
-		defaultValues: {
-			name: "",
-			shortName: "",
-		},
+		defaultValues: { name: "", shortName: "" },
 	});
 
-	// Resetear la unidad cuando cambia la categoría
 	useEffect(() => {
 		if (selectedCategoryId) {
 			setValue("unitId", "");
@@ -167,291 +181,399 @@ export default function CreateActivityPage() {
 	};
 
 	return (
-		<section className="mx-auto max-w-2xl py-4">
-			<h1 className="mb-6 font-bold text-2xl">Crear nueva actividad</h1>
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 dark:bg-black md:p-8">
+			<section className="mx-auto max-w-3xl space-y-6">
+				{/* Botón Volver */}
+				<Button
+					variant="ghost"
+					className="pl-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:text-slate-400"
+					onClick={() => router.back()}
+				>
+					<ArrowLeft className="mr-2 h-4 w-4" />
+					Cancelar y volver
+				</Button>
 
-			<form onSubmit={handleSubmit(onSubmit)}>
-				<FieldGroup>
-					{/* Campo Categoría */}
-					<Field data-invalid={!!errors.categoryId}>
-						<FieldLabel htmlFor="categoryId">
-							Categoría <span className="text-destructive">*</span>
-						</FieldLabel>
-						<FieldContent>
-							<div className="flex gap-2">
-								<Select
-									disabled={isLoadingCategories || isSubmitting}
-									onValueChange={(value) => {
-										setValue("categoryId", value);
-										setValue("unitId", ""); // Resetear unidad
-									}}
-									value={watch("categoryId")}
-								>
-									<SelectTrigger className="w-full" id="categoryId">
-										<SelectValue placeholder="Selecciona una categoría" />
-									</SelectTrigger>
-									<SelectContent>
-										{categories?.map((category) => (
-											<SelectItem key={category.id} value={category.id}>
-												{category.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Button
-									disabled={isSubmitting}
-									onClick={() => setIsCategoryDialogOpen(true)}
-									size="icon"
-									title="Crear nueva categoría"
-									type="button"
-									variant="outline"
-								>
-									<Plus className="h-4 w-4" />
-								</Button>
+				<Card className="border-slate-200 shadow-xl dark:border-slate-800">
+					<CardHeader className="border-b bg-white pb-6 dark:bg-slate-950">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+								<Plus className="h-6 w-6" />
 							</div>
-							<FieldDescription>
-								Selecciona la categoría a la que pertenece esta actividad
-							</FieldDescription>
-							<FieldError
-								errors={errors.categoryId ? [errors.categoryId] : []}
-							/>
-						</FieldContent>
-					</Field>
-
-					{/* Campo Unidad */}
-					<Field data-invalid={!!errors.unitId}>
-						<FieldLabel htmlFor="unitId">
-							Unidad <span className="text-destructive">*</span>
-						</FieldLabel>
-						<FieldContent>
-							<div className="flex gap-2">
-								<Select
-									disabled={!selectedCategoryId || isSubmitting}
-									onValueChange={(value) => setValue("unitId", value)}
-									value={watch("unitId")}
-								>
-									<SelectTrigger className="w-full" id="unitId">
-										<SelectValue
-											placeholder={
-												!selectedCategoryId
-													? "Primero selecciona una categoría"
-													: "Selecciona una unidad"
-											}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{units?.map((unit) => (
-											<SelectItem key={unit.id} value={unit.id}>
-												{unit.name}
-												{unit.shortName && ` (${unit.shortName})`}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Button
-									disabled={!selectedCategoryId || isSubmitting}
-									onClick={() => setIsUnitDialogOpen(true)}
-									size="icon"
-									title="Crear nueva unidad"
-									type="button"
-									variant="outline"
-								>
-									<Plus className="h-4 w-4" />
-								</Button>
+							<div>
+								<CardTitle className="text-xl">Nueva Actividad</CardTitle>
+								<CardDescription>
+									Define qué quieres lograr y cómo vas a medir tu progreso.
+								</CardDescription>
 							</div>
-							<FieldDescription>
-								Selecciona la unidad de medida para esta actividad
-							</FieldDescription>
-							<FieldError errors={errors.unitId ? [errors.unitId] : []} />
-						</FieldContent>
-					</Field>
+						</div>
+					</CardHeader>
 
-					{/* Campo Nombre */}
-					<Field data-invalid={!!errors.name}>
-						<FieldLabel htmlFor="name">
-							Nombre <span className="text-destructive">*</span>
-						</FieldLabel>
-						<FieldContent>
-							<Input
-								id="name"
-								placeholder="Ej: Leer libro X, Correr, Estudiar Python"
-								type="text"
-								{...register("name")}
-								disabled={isSubmitting}
-							/>
-							<FieldDescription>
-								Ingresa un nombre descriptivo para tu actividad
-							</FieldDescription>
-							<FieldError errors={errors.name ? [errors.name] : []} />
-						</FieldContent>
-					</Field>
+					<CardContent className="p-6 md:p-8">
+						<form onSubmit={handleSubmit(onSubmit)}>
+							<FieldGroup className="space-y-6">
+								{/* --- SECCIÓN 1: DETALLES BÁSICOS (Nombre y Descripción primero) --- */}
+								<div className="space-y-4">
+									{/* Campo Nombre */}
+									<Field data-invalid={!!errors.name}>
+										<FieldLabel
+											htmlFor="name"
+											className="flex items-center gap-2 text-base font-semibold"
+										>
+											<Type className="h-4 w-4 text-slate-400" />
+											Nombre de la actividad{" "}
+											<span className="text-destructive">*</span>
+										</FieldLabel>
+										<FieldContent>
+											<Input
+												id="name"
+												placeholder="Ej: Leer 'Hábitos Atómicos', Ahorrar para viaje..."
+												className="h-11 text-lg"
+												type="text"
+												{...register("name")}
+												disabled={isSubmitting}
+											/>
+											<FieldError errors={errors.name ? [errors.name] : []} />
+										</FieldContent>
+									</Field>
 
-					{/* Campo Descripción */}
-					<Field data-invalid={!!errors.description}>
-						<FieldLabel htmlFor="description">Descripción</FieldLabel>
-						<FieldContent>
-							<Textarea
-								id="description"
-								placeholder="Descripción opcional de la actividad..."
-								rows={4}
-								{...register("description")}
-								disabled={isSubmitting}
-							/>
-							<FieldDescription>
-								Agrega una descripción adicional (opcional)
-							</FieldDescription>
-							<FieldError
-								errors={errors.description ? [errors.description] : []}
-							/>
-						</FieldContent>
-					</Field>
+									{/* Campo Descripción */}
+									<Field data-invalid={!!errors.description}>
+										<FieldLabel htmlFor="description">
+											Descripción (Opcional)
+										</FieldLabel>
+										<FieldContent>
+											<Textarea
+												id="description"
+												placeholder="¿Cuál es tu objetivo? Ej: Leer 10 páginas al día..."
+												rows={3}
+												className="resize-none"
+												{...register("description")}
+												disabled={isSubmitting}
+											/>
+											<FieldError
+												errors={
+													errors.description ? [errors.description] : []
+												}
+											/>
+										</FieldContent>
+									</Field>
+								</div>
 
-					{/* Botones */}
-					<div className="flex justify-end gap-3 pt-4">
-						<Button
-							disabled={isSubmitting}
-							onClick={() => router.back()}
-							type="button"
-							variant="outline"
+								{/* --- SECCIÓN 2: CLASIFICACIÓN Y MEDICIÓN (Agrupado Visualmente) --- */}
+								<div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+									<h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
+										<LayoutGrid className="h-4 w-4 text-indigo-500" />
+										Configuración de Medición
+									</h3>
+
+									<div className="grid gap-6 md:grid-cols-2">
+										{/* Campo Categoría */}
+										<Field data-invalid={!!errors.categoryId}>
+											<FieldLabel htmlFor="categoryId">
+												Categoría <span className="text-destructive">*</span>
+											</FieldLabel>
+											<FieldContent>
+												<div className="flex gap-2">
+													<Select
+														disabled={isLoadingCategories || isSubmitting}
+														onValueChange={(value) => {
+															setValue("categoryId", value);
+															setValue("unitId", "");
+														}}
+														value={watch("categoryId")}
+													>
+														<SelectTrigger
+															className="w-full bg-white dark:bg-slate-950"
+															id="categoryId"
+														>
+															<SelectValue placeholder="Seleccionar..." />
+														</SelectTrigger>
+														<SelectContent>
+															{categories?.map((category) => (
+																<SelectItem
+																	key={category.id}
+																	value={category.id}
+																>
+																	{category.name}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+													<Button
+														disabled={isSubmitting}
+														onClick={() => setIsCategoryDialogOpen(true)}
+														size="icon"
+														title="Crear nueva categoría"
+														type="button"
+														variant="outline"
+														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
+													>
+														<Plus className="h-4 w-4" />
+													</Button>
+												</div>
+												<FieldDescription>
+													Agrupa tu actividad (Salud, Estudio, etc.)
+												</FieldDescription>
+												<FieldError
+													errors={errors.categoryId ? [errors.categoryId] : []}
+												/>
+											</FieldContent>
+										</Field>
+
+										{/* Campo Unidad con TOOLTIP */}
+										<Field data-invalid={!!errors.unitId}>
+											<FieldLabel
+												htmlFor="unitId"
+												className="flex items-center gap-2"
+											>
+												Unidad de Medida{" "}
+												<span className="text-destructive">*</span>
+												<TooltipProvider delayDuration={0}>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Info className="h-4 w-4 cursor-help text-indigo-500 transition-colors hover:text-indigo-600" />
+														</TooltipTrigger>
+														<TooltipContent
+															side="top"
+															className="max-w-xs border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-100"
+														>
+															<p className="mb-1 font-semibold">
+																¿Cómo medirás el progreso?
+															</p>
+															<ul className="list-disc space-y-1 pl-4 text-xs">
+																<li>
+																	📚 <strong>Lectura:</strong> Páginas,
+																	Capítulos
+																</li>
+																<li>
+																	⏱️ <strong>Tiempo:</strong> Minutos, Pomodoros
+																</li>
+																<li>
+																	💰 <strong>Finanzas:</strong> Pesos ahorrados,
+																	Gastos
+																</li>
+																<li>
+																	🥤 <strong>Salud:</strong> Litros de agua,
+																	Calorías
+																</li>
+															</ul>
+														</TooltipContent>
+													</Tooltip>
+												</TooltipProvider>
+											</FieldLabel>
+											<FieldContent>
+												<div className="flex gap-2">
+													<Select
+														disabled={!selectedCategoryId || isSubmitting}
+														onValueChange={(value) => setValue("unitId", value)}
+														value={watch("unitId")}
+													>
+														<SelectTrigger
+															className="w-full bg-white dark:bg-slate-950"
+															id="unitId"
+														>
+															<SelectValue
+																placeholder={
+																	!selectedCategoryId
+																		? "Elige categoría primero"
+																		: "Seleccionar unidad..."
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent>
+															{units?.map((unit) => (
+																<SelectItem key={unit.id} value={unit.id}>
+																	{unit.name}
+																	{unit.shortName && ` (${unit.shortName})`}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+													<Button
+														disabled={!selectedCategoryId || isSubmitting}
+														onClick={() => setIsUnitDialogOpen(true)}
+														size="icon"
+														title="Crear nueva unidad"
+														type="button"
+														variant="outline"
+														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
+													>
+														<Plus className="h-4 w-4" />
+													</Button>
+												</div>
+												<FieldDescription>
+													Define la métrica (ej: km, pags, min).
+												</FieldDescription>
+												<FieldError
+													errors={errors.unitId ? [errors.unitId] : []}
+												/>
+											</FieldContent>
+										</Field>
+									</div>
+								</div>
+
+								{/* Botones */}
+								<div className="flex justify-end gap-3 pt-6">
+									<Button
+										disabled={isSubmitting}
+										onClick={() => router.back()}
+										type="button"
+										variant="ghost"
+									>
+										Cancelar
+									</Button>
+									<Button
+										disabled={isSubmitting}
+										type="submit"
+										className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+									>
+										{isSubmitting ? "Guardando..." : "Crear actividad"}
+									</Button>
+								</div>
+							</FieldGroup>
+						</form>
+					</CardContent>
+				</Card>
+
+				{/* --- DIÁLOGOS (Mantienen estructura, mejora visual mínima) --- */}
+
+				{/* Diálogo Categoría */}
+				<Dialog
+					onOpenChange={setIsCategoryDialogOpen}
+					open={isCategoryDialogOpen}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+								<Library className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+							</div>
+							<DialogTitle className="text-center">
+								Nueva categoría
+							</DialogTitle>
+							<DialogDescription className="text-center">
+								Organiza tus actividades por grupos.
+							</DialogDescription>
+						</DialogHeader>
+						<form
+							className="space-y-4"
+							onSubmit={categoryForm.handleSubmit(onCategorySubmit)}
 						>
-							Cancelar
-						</Button>
-						<Button disabled={isSubmitting} type="submit">
-							{isSubmitting ? "Creando..." : "Crear actividad"}
-						</Button>
-					</div>
-				</FieldGroup>
-			</form>
-
-			{/* Diálogo para crear categoría */}
-			<Dialog
-				onOpenChange={setIsCategoryDialogOpen}
-				open={isCategoryDialogOpen}
-			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Crear nueva categoría</DialogTitle>
-						<DialogDescription>
-							Agrega una nueva categoría para organizar tus actividades
-						</DialogDescription>
-					</DialogHeader>
-					<form
-						className="space-y-4"
-						onSubmit={categoryForm.handleSubmit(onCategorySubmit)}
-					>
-						<Field data-invalid={!!categoryForm.formState.errors.name}>
-							<FieldLabel htmlFor="category-name">
-								Nombre <span className="text-destructive">*</span>
-							</FieldLabel>
-							<FieldContent>
-								<Input
-									id="category-name"
-									placeholder="Ej: Lectura, Ejercicio, Estudio"
-									type="text"
-									{...categoryForm.register("name")}
+							<Field data-invalid={!!categoryForm.formState.errors.name}>
+								<FieldLabel htmlFor="category-name">Nombre</FieldLabel>
+								<FieldContent>
+									<Input
+										id="category-name"
+										placeholder="Ej: Lectura, Ejercicio..."
+										type="text"
+										{...categoryForm.register("name")}
+										disabled={createCategory.isPending}
+									/>
+									<FieldError
+										errors={
+											categoryForm.formState.errors.name
+												? [categoryForm.formState.errors.name]
+												: []
+										}
+									/>
+								</FieldContent>
+							</Field>
+							<DialogFooter>
+								<Button
 									disabled={createCategory.isPending}
-								/>
-								<FieldError
-									errors={
-										categoryForm.formState.errors.name
-											? [categoryForm.formState.errors.name]
-											: []
-									}
-								/>
-							</FieldContent>
-						</Field>
-						<DialogFooter>
-							<Button
-								disabled={createCategory.isPending}
-								onClick={() => setIsCategoryDialogOpen(false)}
-								type="button"
-								variant="outline"
-							>
-								Cancelar
-							</Button>
-							<Button disabled={createCategory.isPending} type="submit">
-								{createCategory.isPending ? "Creando..." : "Crear categoría"}
-							</Button>
-						</DialogFooter>
-					</form>
-				</DialogContent>
-			</Dialog>
+									onClick={() => setIsCategoryDialogOpen(false)}
+									type="button"
+									variant="outline"
+								>
+									Cancelar
+								</Button>
+								<Button
+									disabled={createCategory.isPending}
+									type="submit"
+								>
+									Guardar
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
 
-			{/* Diálogo para crear unidad */}
-			<Dialog onOpenChange={setIsUnitDialogOpen} open={isUnitDialogOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Crear nueva unidad</DialogTitle>
-						<DialogDescription>
-							Agrega una nueva unidad de medida para la categoría seleccionada
-						</DialogDescription>
-					</DialogHeader>
-					<form
-						className="space-y-4"
-						onSubmit={unitForm.handleSubmit(onUnitSubmit)}
-					>
-						<Field data-invalid={!!unitForm.formState.errors.name}>
-							<FieldLabel htmlFor="unit-name">
-								Nombre <span className="text-destructive">*</span>
-							</FieldLabel>
-							<FieldContent>
-								<Input
-									id="unit-name"
-									placeholder="Ej: páginas, horas, repeticiones"
-									type="text"
-									{...unitForm.register("name")}
-									disabled={createUnit.isPending}
-								/>
-								<FieldError
-									errors={
-										unitForm.formState.errors.name
-											? [unitForm.formState.errors.name]
-											: []
-									}
-								/>
-							</FieldContent>
-						</Field>
-						<Field data-invalid={!!unitForm.formState.errors.shortName}>
-							<FieldLabel htmlFor="unit-short-name">Nombre corto</FieldLabel>
-							<FieldContent>
-								<Input
-									id="unit-short-name"
-									placeholder="Ej: pag, hrs, rep"
-									type="text"
-									{...unitForm.register("shortName")}
-									disabled={createUnit.isPending}
-								/>
-								<FieldDescription>
-									Nombre abreviado de la unidad (opcional)
-								</FieldDescription>
-								<FieldError
-									errors={
-										unitForm.formState.errors.shortName
-											? [unitForm.formState.errors.shortName]
-											: []
-									}
-								/>
-							</FieldContent>
-						</Field>
-						<DialogFooter>
-							<Button
-								disabled={createUnit.isPending}
-								onClick={() => setIsUnitDialogOpen(false)}
-								type="button"
-								variant="outline"
+				{/* Diálogo Unidad */}
+				<Dialog
+					onOpenChange={setIsUnitDialogOpen}
+					open={isUnitDialogOpen}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50">
+								<Ruler className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+							</div>
+							<DialogTitle className="text-center">Nueva unidad</DialogTitle>
+							<DialogDescription className="text-center">
+								Personaliza cómo mides esta actividad.
+							</DialogDescription>
+						</DialogHeader>
+						<form
+							className="space-y-4"
+							onSubmit={unitForm.handleSubmit(onUnitSubmit)}
+						>
+							<Field data-invalid={!!unitForm.formState.errors.name}>
+								<FieldLabel htmlFor="unit-name">Nombre (Plural)</FieldLabel>
+								<FieldContent>
+									<Input
+										id="unit-name"
+										placeholder="Ej: Páginas, Litros, Pesos"
+										type="text"
+										{...unitForm.register("name")}
+										disabled={createUnit.isPending}
+									/>
+									<FieldError
+										errors={
+											unitForm.formState.errors.name
+												? [unitForm.formState.errors.name]
+												: []
+										}
+									/>
+								</FieldContent>
+							</Field>
+							<Field
+								data-invalid={!!unitForm.formState.errors.shortName}
 							>
-								Cancelar
-							</Button>
-							<Button
-								disabled={createUnit.isPending || !selectedCategoryId}
-								type="submit"
-							>
-								{createUnit.isPending ? "Creando..." : "Crear unidad"}
-							</Button>
-						</DialogFooter>
-					</form>
-				</DialogContent>
-			</Dialog>
-		</section>
+								<FieldLabel htmlFor="unit-short-name">
+									Abreviatura
+								</FieldLabel>
+								<FieldContent>
+									<Input
+										id="unit-short-name"
+										placeholder="Ej: pag, lts, mxn"
+										type="text"
+										{...unitForm.register("shortName")}
+										disabled={createUnit.isPending}
+									/>
+									<FieldDescription>
+										Lo que verás en las gráficas (Opcional)
+									</FieldDescription>
+								</FieldContent>
+							</Field>
+							<DialogFooter>
+								<Button
+									disabled={createUnit.isPending}
+									onClick={() => setIsUnitDialogOpen(false)}
+									type="button"
+									variant="outline"
+								>
+									Cancelar
+								</Button>
+								<Button
+									disabled={createUnit.isPending || !selectedCategoryId}
+									type="submit"
+								>
+									Guardar
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+			</section>
+		</div>
 	);
 }
