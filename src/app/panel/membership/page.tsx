@@ -17,9 +17,10 @@ import {
 	Crown,
 	Edit,
 	Plus,
+	Sparkles,
 	Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ModalDrawer from "~/app/_components/shared/modalDrawer";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -50,8 +51,490 @@ function AddPaymentMethodForm({
 	clientSecret,
 	onSuccess,
 	onCancel,
+	setupIntentId,
 }: {
 	clientSecret: string;
+	onSuccess: () => void;
+	onCancel: () => void;
+	setupIntentId?: string;
+}) {
+	const stripe = useStripe();
+	const elements = useElements();
+	const [isProcessing, setIsProcessing] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const setPaymentMethodFromSetupIntent =
+		api.stripe.setPaymentMethodFromSetupIntent.useMutation();
+
+	const handleSubmit = async (event: React.FormEvent) => {
+		event.preventDefault();
+		setIsProcessing(true);
+		setError(null);
+
+		if (!stripe || !elements) {
+			setError("Stripe no está cargado correctamente");
+			setIsProcessing(false);
+			return;
+		}
+
+		try {
+			// Primero validar y preparar los elementos
+			const { error: submitError } = await elements.submit();
+
+			if (submitError) {
+				setError(
+					submitError.message ?? "Error al validar los datos de la tarjeta",
+				);
+				setIsProcessing(false);
+				return;
+			}
+
+			// Luego confirmar el setup intent
+			const { error: confirmError, setupIntent } = await stripe.confirmSetup({
+				elements,
+				clientSecret,
+				confirmParams: {
+					return_url: window.location.href,
+				},
+				redirect: "if_required",
+			});
+
+			if (confirmError) {
+				setError(confirmError.message ?? "Error al agregar método de pago");
+				setIsProcessing(false);
+			} else {
+				// Establecer como método de pago por defecto
+				const intentId =
+					setupIntent?.id ?? setupIntentId ?? clientSecret.split("_secret")[0];
+				if (intentId) {
+					try {
+						await setPaymentMethodFromSetupIntent.mutateAsync({
+							setupIntentId: intentId,
+						});
+					} catch (err) {
+						console.error("Error al establecer método por defecto:", err);
+						// No fallar si no se puede establecer como por defecto
+					}
+				}
+				onSuccess();
+			}
+		} catch (err) {
+			console.error("Error al agregar método de pago:", err);
+			setError("Error inesperado al procesar el pago");
+			setIsProcessing(false);
+		}
+	};
+
+	return (
+		<form className="space-y-4" onSubmit={handleSubmit}>
+			{error && (
+				<div className="rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+					{error}
+				</div>
+			)}
+			<div className="rounded-md border p-4">
+				<PaymentElement />
+			</div>
+			<DialogFooter>
+				<Button onClick={onCancel} type="button" variant="outline">
+					Cancelar
+				</Button>
+				<Button disabled={isProcessing || !stripe || !elements} type="submit">
+					{isProcessing ? "Procesando..." : "Agregar"}
+				</Button>
+			</DialogFooter>
+		</form>
+	);
+}
+
+// Componente para mostrar opciones de compra
+function PricingSection({
+	membership,
+}: {
+	membership: {
+		type: "trial" | "subscription" | "lifetime";
+		hasLifetimeAccess: boolean;
+		trialEndsAt: Date | null;
+		subscription: {
+			id: string;
+			status: string;
+			currentPeriodEnd: number;
+			currentPeriodStart: number;
+			cancelAtPeriodEnd: boolean;
+			price: {
+				id: string | undefined;
+				amount: number | null | undefined;
+				currency: string | undefined;
+				interval: string | undefined;
+				intervalCount: number | undefined;
+			};
+			product: {
+				id: string | undefined;
+				name: string | null | undefined;
+				description: string | null | undefined;
+			};
+		} | null;
+	};
+}) {
+	const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
+	const [showCheckout, setShowCheckout] = useState(false);
+	const [checkoutType, setCheckoutType] = useState<"lifetime" | "subscription">(
+		"lifetime",
+	);
+
+	const { data: prices, isLoading: isLoadingPrices } =
+		api.stripe.getProductPrices.useQuery();
+
+	const utils = api.useUtils();
+	const createLifetimePaymentIntent =
+		api.stripe.createLifetimePaymentIntent.useMutation();
+	const createSubscription = api.stripe.createSubscription.useMutation();
+
+	const handlePurchase = async (priceId: string, type: "lifetime" | "subscription") => {
+		setSelectedPriceId(priceId);
+		setCheckoutType(type);
+		setShowCheckout(true);
+	};
+
+	const handleCheckoutSuccess = () => {
+		setShowCheckout(false);
+		setSelectedPriceId(null);
+		void utils.stripe.getMembership.invalidate();
+	};
+
+	if (isLoadingPrices) {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle>Opciones de Compra</CardTitle>
+					<CardDescription>
+						Carga las opciones de precio disponibles
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-3">
+						<Skeleton className="h-32 w-full" />
+						<Skeleton className="h-32 w-full" />
+						<Skeleton className="h-32 w-full" />
+					</div>
+				</CardContent>
+			</Card>
+		);
+	}
+
+	if (!prices) {
+		return null;
+	}
+
+	const formatPrice = (amount: number, currency: string = "usd") => {
+		return new Intl.NumberFormat("es-ES", {
+			style: "currency",
+			currency: currency.toUpperCase(),
+		}).format(amount / 100);
+	};
+
+	return (
+		<>
+			<Card>
+				<CardHeader>
+					<CardTitle>Opciones de Compra</CardTitle>
+					<CardDescription>
+						Elige el plan que mejor se adapte a tus necesidades
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="grid gap-4 md:grid-cols-3">
+						{/* Precio mensual */}
+						{prices.monthly.length > 0 && (
+							<Card className="border-2">
+								<CardHeader>
+									<CardTitle className="text-lg">Suscripción Mensual</CardTitle>
+									<CardDescription>
+										Renovación automática cada mes
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div>
+										<p className="font-bold text-3xl">
+											{formatPrice(
+												prices.monthly[0]?.amount ?? 0,
+												prices.monthly[0]?.currency,
+											)}
+										</p>
+										<p className="text-slate-500 text-sm dark:text-slate-400">
+											/mes
+										</p>
+									</div>
+									<Button
+										className="w-full"
+										onClick={() =>
+											handlePurchase(
+												prices.monthly[0]?.id ?? "",
+												"subscription",
+											)
+										}
+										variant="outline"
+									>
+										Suscribirse
+									</Button>
+								</CardContent>
+							</Card>
+						)}
+
+						{/* Precio de por vida */}
+						{prices.lifetime.length > 0 && (
+							<Card className="relative border-2">
+								<CardHeader>
+									<div className="flex items-center justify-between">
+										<CardTitle className="text-lg">Acceso de por vida</CardTitle>
+										<Crown className="h-5 w-5 text-amber-500" />
+									</div>
+									<CardDescription>
+										Pago único, acceso permanente
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div>
+										<p className="font-bold text-3xl">
+											{formatPrice(
+												prices.lifetime[0]?.amount ?? 0,
+												prices.lifetime[0]?.currency,
+											)}
+										</p>
+										<p className="text-slate-500 text-sm dark:text-slate-400">
+											Pago único
+										</p>
+									</div>
+									<Button
+										className="w-full"
+										onClick={() =>
+											handlePurchase(prices.lifetime[0]?.id ?? "", "lifetime")
+										}
+										variant="outline"
+									>
+										<Sparkles className="mr-2 h-4 w-4" />
+										Comprar ahora
+									</Button>
+								</CardContent>
+							</Card>
+						)}
+
+						{/* Precio anual */}
+						{prices.yearly.length > 0 && (
+							<Card className="border-2 border-primary">
+								<CardHeader>
+									<div className="flex items-center justify-between">
+										<CardTitle className="text-lg">Suscripción Anual</CardTitle>
+										<Badge variant="secondary">Mejor valor</Badge>
+									</div>
+									<CardDescription>
+										Renovación automática cada año
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div>
+										<p className="font-bold text-3xl">
+											{formatPrice(
+												prices.yearly[0]?.amount ?? 0,
+												prices.yearly[0]?.currency,
+											)}
+										</p>
+										<p className="text-slate-500 text-sm dark:text-slate-400">
+											/año
+										</p>
+									</div>
+									<Button
+										className="w-full"
+										onClick={() =>
+											handlePurchase(
+												prices.yearly[0]?.id ?? "",
+												"subscription",
+											)
+										}
+									>
+										Suscribirse
+									</Button>
+								</CardContent>
+							</Card>
+						)}
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Modal de checkout */}
+			{showCheckout && selectedPriceId && (
+				<CheckoutModal
+					priceId={selectedPriceId}
+					type={checkoutType}
+					onSuccess={handleCheckoutSuccess}
+					onCancel={() => {
+						setShowCheckout(false);
+						setSelectedPriceId(null);
+					}}
+				/>
+			)}
+		</>
+	);
+}
+
+// Componente de checkout
+function CheckoutModal({
+	priceId,
+	type,
+	onSuccess,
+	onCancel,
+}: {
+	priceId: string;
+	type: "lifetime" | "subscription";
+	onSuccess: () => void;
+	onCancel: () => void;
+}) {
+	const [isProcessing, setIsProcessing] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [clientSecret, setClientSecret] = useState<string | null>(null);
+	const [isInitializing, setIsInitializing] = useState(true);
+
+	const { data: paymentMethods } = api.stripe.getPaymentMethods.useQuery();
+	const createLifetimePaymentIntent =
+		api.stripe.createLifetimePaymentIntent.useMutation();
+	const createSubscription = api.stripe.createSubscription.useMutation();
+
+	// Inicializar el checkout
+	useEffect(() => {
+		const initializeCheckout = async () => {
+			setIsInitializing(true);
+			setError(null);
+			try {
+				if (type === "lifetime") {
+					const result = await createLifetimePaymentIntent.mutateAsync({
+						priceId,
+					});
+					setClientSecret(result.clientSecret);
+				} else {
+					// Para suscripciones, intentar usar método de pago por defecto
+					if (paymentMethods?.defaultPaymentMethod) {
+						const defaultPaymentMethodId =
+							typeof paymentMethods.defaultPaymentMethod === "string"
+								? paymentMethods.defaultPaymentMethod
+								: null;
+						if (!defaultPaymentMethodId) {
+							setError("No se pudo obtener el método de pago por defecto");
+							setIsInitializing(false);
+							return;
+						}
+						const result = await createSubscription.mutateAsync({
+							priceId,
+							paymentMethodId: defaultPaymentMethodId,
+						});
+						if (result.clientSecret) {
+							setClientSecret(result.clientSecret);
+						} else {
+							// La suscripción se creó exitosamente sin necesidad de pago inmediato
+							onSuccess();
+							return;
+						}
+					} else {
+						// Si no hay método por defecto, crear suscripción y pedir método de pago
+						const result = await createSubscription.mutateAsync({
+							priceId,
+						});
+						if (result.clientSecret) {
+							setClientSecret(result.clientSecret);
+						} else {
+							onSuccess();
+							return;
+						}
+					}
+				}
+			} catch (err) {
+				console.error("Error al inicializar checkout:", err);
+				setError(
+					err instanceof Error ? err.message : "Error al inicializar el proceso de pago",
+				);
+			} finally {
+				setIsInitializing(false);
+			}
+		};
+
+		void initializeCheckout();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [priceId, type]);
+
+	if (isInitializing) {
+		return (
+			<ModalDrawer
+				description="Inicializando proceso de pago..."
+				isOpen={true}
+				setIsOpen={() => {}}
+				title="Procesando..."
+			>
+				<div className="flex items-center justify-center p-8">
+					<Skeleton className="h-8 w-8" />
+				</div>
+			</ModalDrawer>
+		);
+	}
+
+	if (error && !clientSecret) {
+		return (
+			<ModalDrawer
+				description={error}
+				isOpen={true}
+				setIsOpen={onCancel}
+				title="Error"
+			>
+				<DialogFooter>
+					<Button onClick={onCancel} variant="outline">
+						Cerrar
+					</Button>
+				</DialogFooter>
+			</ModalDrawer>
+		);
+	}
+
+	if (!clientSecret) {
+		return null;
+	}
+
+	return (
+		<ModalDrawer
+			description={
+				type === "lifetime"
+					? "Completa el pago para obtener acceso de por vida"
+					: "Completa el pago para activar tu suscripción"
+			}
+			isOpen={true}
+			setIsOpen={onCancel}
+			title={type === "lifetime" ? "Comprar acceso de por vida" : "Activar suscripción"}
+		>
+			<Elements
+				options={{
+					clientSecret,
+					appearance: {
+						theme: "stripe",
+					},
+				}}
+				stripe={stripePromise}
+			>
+				<CheckoutForm
+					clientSecret={clientSecret}
+					type={type}
+					onSuccess={onSuccess}
+					onCancel={onCancel}
+				/>
+			</Elements>
+		</ModalDrawer>
+	);
+}
+
+// Formulario de checkout
+function CheckoutForm({
+	clientSecret,
+	type,
+	onSuccess,
+	onCancel,
+}: {
+	clientSecret: string;
+	type: "lifetime" | "subscription";
 	onSuccess: () => void;
 	onCancel: () => void;
 }) {
@@ -83,8 +566,8 @@ function AddPaymentMethodForm({
 				return;
 			}
 
-			// Luego confirmar el setup intent
-			const { error: confirmError } = await stripe.confirmSetup({
+			// Confirmar el pago
+			const { error: confirmError } = await stripe.confirmPayment({
 				elements,
 				clientSecret,
 				confirmParams: {
@@ -94,13 +577,13 @@ function AddPaymentMethodForm({
 			});
 
 			if (confirmError) {
-				setError(confirmError.message ?? "Error al agregar método de pago");
+				setError(confirmError.message ?? "Error al procesar el pago");
 				setIsProcessing(false);
 			} else {
 				onSuccess();
 			}
 		} catch (err) {
-			console.error("Error al agregar método de pago:", err);
+			console.error("Error al procesar pago:", err);
 			setError("Error inesperado al procesar el pago");
 			setIsProcessing(false);
 		}
@@ -121,7 +604,11 @@ function AddPaymentMethodForm({
 					Cancelar
 				</Button>
 				<Button disabled={isProcessing || !stripe || !elements} type="submit">
-					{isProcessing ? "Procesando..." : "Agregar"}
+					{isProcessing
+						? "Procesando..."
+						: type === "lifetime"
+							? "Comprar ahora"
+							: "Activar suscripción"}
 				</Button>
 			</DialogFooter>
 		</form>
@@ -159,12 +646,20 @@ export default function MembershipPage() {
 	const [setupIntentClientSecret, setSetupIntentClientSecret] = useState<
 		string | null
 	>(null);
+	const [setupIntentId, setSetupIntentId] = useState<string | undefined>(
+		undefined,
+	);
 
 	const handleAddPaymentMethod = async () => {
 		try {
 			const result = await createSetupIntent.mutateAsync();
-			setSetupIntentClientSecret(result.clientSecret);
-			setShowAddPaymentMethod(true);
+			if (result.clientSecret) {
+				setSetupIntentClientSecret(result.clientSecret);
+				// Extraer el ID del setup intent del client secret
+				const intentId = result.clientSecret.split("_secret")[0];
+				setSetupIntentId(intentId);
+				setShowAddPaymentMethod(true);
+			}
 		} catch (error) {
 			console.error("Error al crear setup intent:", error);
 		}
@@ -173,6 +668,7 @@ export default function MembershipPage() {
 	const handlePaymentMethodAdded = () => {
 		setShowAddPaymentMethod(false);
 		setSetupIntentClientSecret(null);
+		setSetupIntentId(undefined);
 		void utils.stripe.getPaymentMethods.invalidate();
 	};
 
@@ -458,6 +954,11 @@ export default function MembershipPage() {
 					</CardContent>
 				</Card>
 
+				{/* Sección de Compra - Solo mostrar si no tiene acceso de por vida */}
+				{membership && membership.type !== "lifetime" && (
+					<PricingSection membership={membership} />
+				)}
+
 				{/* Métodos de Pago */}
 				<Card>
 					<CardHeader>
@@ -575,9 +1076,11 @@ export default function MembershipPage() {
 						>
 							<AddPaymentMethodForm
 								clientSecret={setupIntentClientSecret}
+								setupIntentId={setupIntentId}
 								onCancel={() => {
 									setShowAddPaymentMethod(false);
 									setSetupIntentClientSecret(null);
+									setSetupIntentId(undefined);
 								}}
 								onSuccess={handlePaymentMethodAdded}
 							/>
