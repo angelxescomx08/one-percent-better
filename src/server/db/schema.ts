@@ -255,6 +255,13 @@ export const userAccess = pgTable(
     // Datos de Stripe
     stripeCustomerId: text("stripe_customer_id"), // Para mapear webhooks de Stripe al usuario
     stripePaymentIntentId: text("stripe_payment_intent_id"), // Referencia del pago único
+    stripeSubscriptionId: text("stripe_subscription_id"), // ID de la suscripción activa
+    subscriptionStatus: text("subscription_status"), // active, canceled, past_due, etc.
+    subscriptionCurrentPeriodEnd: timestamp("subscription_current_period_end"), // Fin del periodo actual
+    subscriptionCurrentPeriodStart: timestamp("subscription_current_period_start"), // Inicio del periodo actual
+    subscriptionCancelAtPeriodEnd: boolean("subscription_cancel_at_period_end")
+      .$defaultFn(() => false)
+      .notNull(), // Si está cancelada pero sigue activa hasta el fin del periodo
 
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
@@ -282,6 +289,9 @@ export const userAccess = pgTable(
 
     // 5. Analíticas: Cuántos usuarios tienen acceso de por vida
     index("user_access_lifetime_status_idx").on(table.hasLifetimeAccess),
+
+    // 6. Consultas de suscripciones: Buscar por estado de suscripción
+    index("user_access_subscription_status_idx").on(table.subscriptionStatus),
   ],
 );
 

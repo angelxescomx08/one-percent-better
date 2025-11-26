@@ -2,6 +2,7 @@ import { postRouter } from "~/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { activityRouter } from "./routers/activity";
 import { authRouter } from "./routers/auth";
+import { stripeRouter } from "./routers/stripe";
 import { usersRouter } from "./routers/users";
 
 /**
@@ -14,6 +15,7 @@ export const appRouter = createTRPCRouter({
   auth: authRouter,
   activity: activityRouter,
   users: usersRouter,
+  stripe: stripeRouter,
 });
 
 // export type definition of API

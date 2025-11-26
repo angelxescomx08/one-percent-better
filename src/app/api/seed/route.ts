@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { env } from "~/env";
 import { names, seedData } from "~/lib/data/seed";
 import { auth } from "~/server/better-auth/config";
 import { db } from "~/server/db";
@@ -11,11 +12,11 @@ import {
   category,
   unit,
   user,
+  userAccess,
   userActivity,
 } from "~/server/db/schema";
 
 // Estructura de datos para categorías, unidades y actividades
-
 
 export async function GET() {
   try {
@@ -175,6 +176,7 @@ export async function GET() {
     // Preparar arrays para inserts en lote
     const userActivityInserts: (typeof userActivity.$inferInsert)[] = [];
     const activityLogInserts: (typeof activityLog.$inferInsert)[] = [];
+    const userAccessInserts: (typeof userAccess.$inferInsert)[] = [];
     const userUpdates: Array<{
       id: string;
       emailVerified: boolean;
@@ -189,7 +191,7 @@ export async function GET() {
     for (let i = 0; i < 100; i++) {
       const userName = names[i % names.length] || `Usuario ${i + 1}`;
       const userEmail = `usuario${i + 1}@ejemplo.com`;
-      const password = "123456789";
+      const password = env.PASSWORD_SEED_ACCOUNTS;
 
       let userId: string;
 
@@ -234,6 +236,16 @@ export async function GET() {
         });
 
         createdUsers.push(userId);
+
+        // Crear registro de acceso permanente para el usuario
+        userAccessInserts.push({
+          id: randomUUID(),
+          userId,
+          hasLifetimeAccess: true,
+          trialEndsAt: twoYearsAgo, // Aunque tiene acceso permanente, se requiere el campo
+          createdAt: twoYearsAgo,
+          updatedAt: twoYearsAgo,
+        });
 
         // Asignar actividades al usuario (1-3 actividades determinísticamente)
         const numActivities = (i % 3) + 1; // 1, 2, o 3 actividades
@@ -320,6 +332,11 @@ export async function GET() {
                 .where(eq(user.id, userUpdate.id)),
             ),
           );
+        }
+
+        // Insertar todos los registros de acceso permanente en lote
+        if (userAccessInserts.length > 0) {
+          await tx.insert(userAccess).values(userAccessInserts);
         }
 
         // Insertar todas las relaciones usuario-actividad en lote
