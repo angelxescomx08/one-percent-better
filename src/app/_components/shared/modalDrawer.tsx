@@ -1,38 +1,37 @@
 "use client";
 
 import {
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-  useEffect,
-  useState,
+	type Dispatch,
+	type ReactNode,
+	type SetStateAction,
+	useEffect,
+	useState,
 } from "react";
 
 import {
-  Dialog,
-  DialogContent,
-  DialogOverlay,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogOverlay,
+	DialogTitle,
 } from "~/components/ui/dialog";
 
 import {
-  Drawer,
-  DrawerContent,
-  DrawerOverlay,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerOverlay,
+	DrawerTitle,
 } from "~/components/ui/drawer";
 
 interface ModalDrawerProps {
-  isOpen: boolean;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
-  title: string;
-  description: string;
-  children: ReactNode;
+	isOpen: boolean;
+	setIsOpen: Dispatch<SetStateAction<boolean>>;
+	title: string;
+	description: string;
+	children: ReactNode;
 }
 
 /**
@@ -41,54 +40,56 @@ interface ModalDrawerProps {
  * El componente arma internamente la estructura obligatoria de shadcn
  */
 export default function ModalDrawer({
-  isOpen,
-  setIsOpen,
-  title,
-  description,
-  children,
+	isOpen,
+	setIsOpen,
+	title,
+	description,
+	children,
 }: ModalDrawerProps) {
-  const [isMobile, setIsMobile] = useState(false);
+	const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+	useEffect(() => {
+		const check = () => setIsMobile(window.innerWidth < 768);
+		check();
+		window.addEventListener("resize", check);
+		return () => window.removeEventListener("resize", check);
+	}, []);
 
-  // --- MOBILE (DRAWER) ---
-  if (isMobile) {
-    return (
-      <Drawer open={isOpen} onOpenChange={setIsOpen}>
-        <DrawerOverlay />
-        <DrawerContent>
-          <div className="mx-auto w-full max-w-md">
-            <DrawerHeader>
-              {title && <DrawerTitle>{title}</DrawerTitle>}
-              {description && (
-                <DrawerDescription>{description}</DrawerDescription>
-              )}
-            </DrawerHeader>
+	// --- MOBILE (DRAWER) ---
+	if (isMobile) {
+		return (
+			<Drawer onOpenChange={setIsOpen} open={isOpen}>
+				<DrawerOverlay />
+				<DrawerContent>
+					<div className="mx-auto w-full max-w-md">
+						<DrawerHeader>
+							{title && <DrawerTitle>{title}</DrawerTitle>}
+							{description && (
+								<DrawerDescription>{description}</DrawerDescription>
+							)}
+						</DrawerHeader>
 
-            <div className="p-4">{children}</div>
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
+						<div className="max-h-[calc(100vh-8rem)] overflow-y-auto p-4">
+							{children}
+						</div>
+					</div>
+				</DrawerContent>
+			</Drawer>
+		);
+	}
 
-  // --- DESKTOP (MODAL / DIALOG) ---
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogOverlay />
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          {title && <DialogTitle>{title}</DialogTitle>}
-          {description && <DialogDescription>{description}</DialogDescription>}
-        </DialogHeader>
+	// --- DESKTOP (MODAL / DIALOG) ---
+	return (
+		<Dialog onOpenChange={setIsOpen} open={isOpen}>
+			<DialogOverlay />
+			<DialogContent className="flex max-h-[calc(100vh-4rem)] max-w-md flex-col gap-4">
+				<DialogHeader>
+					{title && <DialogTitle>{title}</DialogTitle>}
+					{description && <DialogDescription>{description}</DialogDescription>}
+				</DialogHeader>
 
-        {children}
-      </DialogContent>
-    </Dialog>
-  );
+				<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+			</DialogContent>
+		</Dialog>
+	);
 }
