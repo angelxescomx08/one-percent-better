@@ -19,6 +19,12 @@ export const auth = betterAuth({
       redirectURI: "http://localhost:3000/api/auth/callback/google",
     },
   },
+  // advanced: {
+  //   defaultCookieAttributes: {
+  //     sameSite: "lax",
+  //     secure: process.env.NODE_ENV === "production",
+  //   },
+  // },
   plugins: [nextCookies()],
 });
 

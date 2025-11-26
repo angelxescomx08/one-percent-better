@@ -54,39 +54,9 @@ export const usersRouter = createTRPCRouter({
       body: { provider: "google", callbackURL: "/panel" },
     });
 
-    console.log(res);
-
     if (!res.url) throw new Error("Error con Google Auth");
 
-    // Obtener la sesión después del callback de Google
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (session?.user) {
-      const userId = session.user.id;
-
-      const googleAccount = await db.query.account.findFirst({
-        where: (account, { eq, and }) =>
-          and(eq(account.userId, userId), eq(account.providerId, "google")),
-      });
-
-      if (googleAccount) {
-        const existingAccess = await db.query.userAccess.findFirst({
-          where: (userAccess, { eq }) => eq(userAccess.userId, userId),
-        });
-
-        if (!existingAccess) {
-          await db.insert(userAccess).values({
-            id: randomUUID(),
-            userId: userId,
-            hasLifetimeAccess: false,
-            trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          });
-        }
-      }
-    }
-
+    // Solo devolvemos la URL para que el frontend redirija al usuario a Google
     return { url: res.url };
   }),
 });

@@ -18,6 +18,7 @@ import { Field, FieldContent, FieldLabel } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
+import { signInWithGoogleAction } from "./actions";
 
 export default function RegisterPage() {
 	const router = useRouter();
@@ -35,25 +36,10 @@ export default function RegisterPage() {
 		},
 	});
 
-	const signInWithGoogle = api.users.signInWithGoogle.useMutation({
-		onSuccess: () => {
-			router.push("/panel");
-		},
-		onError: (error) => {
-			setError(error.message || "Error con Google Auth");
-		},
-	});
-
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		setError(null);
 		await signUp.mutateAsync({ name, email, password });
-	};
-
-	const handleGoogleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		setError(null);
-		await signInWithGoogle.mutateAsync();
 	};
 
 	return (
@@ -167,10 +153,9 @@ export default function RegisterPage() {
 						</div>
 					</div>
 
-					<form onSubmit={handleGoogleSignIn}>
+					<form action={signInWithGoogleAction}>
 						<Button
 							className="h-11 w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-							disabled={signInWithGoogle.isPending}
 							type="submit"
 							variant="outline"
 						>
@@ -181,9 +166,7 @@ export default function RegisterPage() {
 								src="/imgs/Logo-google-icon-PNG.png"
 								width={18}
 							/>
-							{signInWithGoogle.isPending
-								? "Redirigiendo..."
-								: "Registrarse con Google"}
+							Registrarse con Google
 						</Button>
 					</form>
 				</CardContent>
