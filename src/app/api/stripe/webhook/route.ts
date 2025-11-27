@@ -1,10 +1,10 @@
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { env } from "~/env";
 import { db } from "~/server/db";
 import { userAccess } from "~/server/db/schema";
-import { env } from "~/env";
-import { eq } from "drizzle-orm";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-11-17.clover",
@@ -134,10 +134,12 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     return;
   }
 
-  const currentPeriodEnd = (subscription as unknown as { current_period_end: number })
-    .current_period_end;
-  const currentPeriodStart = (subscription as unknown as { current_period_start: number })
-    .current_period_start;
+  const currentPeriodEnd = (
+    subscription as unknown as { current_period_end: number }
+  ).current_period_end;
+  const currentPeriodStart = (
+    subscription as unknown as { current_period_start: number }
+  ).current_period_start;
 
   // Actualizar el registro de acceso con la información de la suscripción
   await db
@@ -152,7 +154,9 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     })
     .where(eq(userAccess.id, access.id));
 
-  console.log(`Suscripción ${subscription.id} creada para usuario ${access.userId}`);
+  console.log(
+    `Suscripción ${subscription.id} creada para usuario ${access.userId}`,
+  );
 }
 
 // Manejar suscripción actualizada
@@ -173,10 +177,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  const currentPeriodEnd = (subscription as unknown as { current_period_end: number })
-    .current_period_end;
-  const currentPeriodStart = (subscription as unknown as { current_period_start: number })
-    .current_period_start;
+  const currentPeriodEnd = (
+    subscription as unknown as { current_period_end: number }
+  ).current_period_end;
+  const currentPeriodStart = (
+    subscription as unknown as { current_period_start: number }
+  ).current_period_start;
 
   // Actualizar el estado de la suscripción
   await db
@@ -202,7 +208,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     );
   }
 
-  console.log(`Suscripción ${subscription.id} actualizada para usuario ${access.userId}`);
+  console.log(
+    `Suscripción ${subscription.id} actualizada para usuario ${access.userId}`,
+  );
 }
 
 // Manejar suscripción eliminada
@@ -233,7 +241,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     })
     .where(eq(userAccess.id, access.id));
 
-  console.log(`Suscripción ${subscription.id} eliminada para usuario ${access.userId}`);
+  console.log(
+    `Suscripción ${subscription.id} eliminada para usuario ${access.userId}`,
+  );
 }
 
 // Manejar pago exitoso de payment intent (acceso de por vida)
@@ -297,11 +307,13 @@ async function handlePaymentIntentSucceeded(
 // Manejar pago exitoso de factura
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
-  const invoiceSubscription = (invoice as unknown as { subscription: string | Stripe.Subscription | null }).subscription;
+  const invoiceSubscription = (
+    invoice as unknown as { subscription: string | Stripe.Subscription | null }
+  ).subscription;
   const subscriptionId =
     typeof invoiceSubscription === "string"
       ? invoiceSubscription
-      : invoiceSubscription?.id ?? null;
+      : (invoiceSubscription?.id ?? null);
 
   if (!customerId || !subscriptionId) {
     return;
@@ -319,10 +331,12 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   // Obtener la suscripción para actualizar los periodos
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const currentPeriodEnd = (subscription as unknown as { current_period_end: number })
-      .current_period_end;
-    const currentPeriodStart = (subscription as unknown as { current_period_start: number })
-      .current_period_start;
+    const currentPeriodEnd = (
+      subscription as unknown as { current_period_end: number }
+    ).current_period_end;
+    const currentPeriodStart = (
+      subscription as unknown as { current_period_start: number }
+    ).current_period_start;
 
     await db
       .update(userAccess)
@@ -338,18 +352,23 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       `Pago de factura exitoso para usuario ${access.userId}, suscripción ${subscriptionId}`,
     );
   } catch (error) {
-    console.error("Error al obtener suscripción en invoice.payment_succeeded:", error);
+    console.error(
+      "Error al obtener suscripción en invoice.payment_succeeded:",
+      error,
+    );
   }
 }
 
 // Manejar fallo en el pago de factura
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
-  const invoiceSubscription = (invoice as unknown as { subscription: string | Stripe.Subscription | null }).subscription;
+  const invoiceSubscription = (
+    invoice as unknown as { subscription: string | Stripe.Subscription | null }
+  ).subscription;
   const subscriptionId =
     typeof invoiceSubscription === "string"
       ? invoiceSubscription
-      : invoiceSubscription?.id ?? null;
+      : (invoiceSubscription?.id ?? null);
 
   if (!customerId || !subscriptionId) {
     return;
@@ -369,7 +388,10 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
     // Si la suscripción está en past_due o unpaid, actualizar el estado
-    if (subscription.status === "past_due" || subscription.status === "unpaid") {
+    if (
+      subscription.status === "past_due" ||
+      subscription.status === "unpaid"
+    ) {
       await db
         .update(userAccess)
         .set({
@@ -386,7 +408,10 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
       // el evento customer.subscription.deleted será manejado por separado
     }
   } catch (error) {
-    console.error("Error al obtener suscripción en invoice.payment_failed:", error);
+    console.error(
+      "Error al obtener suscripción en invoice.payment_failed:",
+      error,
+    );
   }
 }
 
@@ -410,7 +435,10 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   }
 
   // Si es un reembolso de un pago de acceso de por vida, desactivar el acceso
-  if (access.stripePaymentIntentId === paymentIntentId && access.hasLifetimeAccess) {
+  if (
+    access.stripePaymentIntentId === paymentIntentId &&
+    access.hasLifetimeAccess
+  ) {
     await db
       .update(userAccess)
       .set({
@@ -441,11 +469,15 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
       });
 
       const refundedInvoice = invoices.data.find((inv) => {
-        const invPaymentIntentValue = (inv as unknown as { payment_intent: string | Stripe.PaymentIntent | null }).payment_intent;
+        const invPaymentIntentValue = (
+          inv as unknown as {
+            payment_intent: string | Stripe.PaymentIntent | null;
+          }
+        ).payment_intent;
         const invPaymentIntent =
           typeof invPaymentIntentValue === "string"
             ? invPaymentIntentValue
-            : invPaymentIntentValue?.id ?? null;
+            : (invPaymentIntentValue?.id ?? null);
         return invPaymentIntent === paymentIntentId && inv.status === "void";
       });
 
@@ -471,4 +503,3 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     }
   }
 }
-
