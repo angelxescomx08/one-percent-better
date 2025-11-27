@@ -642,6 +642,16 @@ export default function MembershipPage() {
 			setPaymentMethodToDelete(null);
 		},
 	});
+	const cancelSubscription = api.stripe.cancelSubscription.useMutation({
+		onSuccess: () => {
+			void utils.stripe.getMembership.invalidate();
+		},
+	});
+	const reactivateSubscription = api.stripe.reactivateSubscription.useMutation({
+		onSuccess: () => {
+			void utils.stripe.getMembership.invalidate();
+		},
+	});
 
 	const [setupIntentClientSecret, setSetupIntentClientSecret] = useState<
 		string | null
@@ -897,7 +907,7 @@ export default function MembershipPage() {
 												<div className="rounded-md bg-yellow-50 p-3 dark:bg-yellow-900/20">
 													<div className="flex items-start gap-2">
 														<AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-														<div>
+														<div className="flex-1">
 															<p className="font-medium text-sm text-yellow-800 dark:text-yellow-200">
 																Suscripción cancelada
 															</p>
@@ -917,9 +927,42 @@ export default function MembershipPage() {
 																.
 															</p>
 														</div>
+														<Button
+															disabled={reactivateSubscription.isPending}
+															onClick={() => {
+																void reactivateSubscription.mutateAsync();
+															}}
+															size="sm"
+															variant="outline"
+														>
+															Reactivar
+														</Button>
 													</div>
 												</div>
 											)}
+
+											{membership.subscription.status === "active" &&
+												!membership.subscription.cancelAtPeriodEnd && (
+													<div className="flex justify-end">
+														<Button
+															disabled={cancelSubscription.isPending}
+															onClick={() => {
+																if (
+																	confirm(
+																		"¿Estás seguro de que deseas cancelar tu suscripción? Podrás seguir usando el servicio hasta el final del periodo actual.",
+																	)
+																) {
+																	void cancelSubscription.mutateAsync();
+																}
+															}}
+															variant="destructive"
+														>
+															{cancelSubscription.isPending
+																? "Cancelando..."
+																: "Cancelar Suscripción"}
+														</Button>
+													</div>
+												)}
 										</div>
 									)}
 

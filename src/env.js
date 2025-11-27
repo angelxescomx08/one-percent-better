@@ -18,6 +18,7 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     STRIPE_SECRET_KEY: z.string(),
+    STRIPE_WEBHOOK_SECRET: z.string(),
     PASSWORD_SEED_ACCOUNTS: z.string(),
   },
 
@@ -42,6 +43,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     PASSWORD_SEED_ACCOUNTS: process.env.PASSWORD_SEED_ACCOUNTS,

@@ -617,5 +617,91 @@ export const stripeRouter = createTRPCRouter({
         throw new Error("Error al establecer método de pago");
       }
     }),
+
+  // Cancelar suscripción
+  cancelSubscription: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // Obtener acceso del usuario
+    const access = await db.query.userAccess.findFirst({
+      where: eq(userAccess.userId, userId),
+    });
+
+    if (!access?.stripeSubscriptionId) {
+      throw new Error("No tienes una suscripción activa para cancelar");
+    }
+
+    try {
+      // Cancelar la suscripción al final del periodo actual
+      const subscription = await stripe.subscriptions.update(
+        access.stripeSubscriptionId,
+        {
+          cancel_at_period_end: true,
+        },
+      );
+
+      // Actualizar en la BD
+      await db
+        .update(userAccess)
+        .set({
+          subscriptionCancelAtPeriodEnd: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(userAccess.userId, userId));
+
+      const currentPeriodEnd = (subscription as unknown as { current_period_end: number })
+        .current_period_end;
+
+      return {
+        success: true,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        currentPeriodEnd: currentPeriodEnd,
+      };
+    } catch (error) {
+      console.error("Error al cancelar suscripción:", error);
+      throw new Error("Error al cancelar suscripción");
+    }
+  }),
+
+  // Reactivar suscripción cancelada
+  reactivateSubscription: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // Obtener acceso del usuario
+    const access = await db.query.userAccess.findFirst({
+      where: eq(userAccess.userId, userId),
+    });
+
+    if (!access?.stripeSubscriptionId) {
+      throw new Error("No tienes una suscripción para reactivar");
+    }
+
+    try {
+      // Remover la cancelación programada
+      const subscription = await stripe.subscriptions.update(
+        access.stripeSubscriptionId,
+        {
+          cancel_at_period_end: false,
+        },
+      );
+
+      // Actualizar en la BD
+      await db
+        .update(userAccess)
+        .set({
+          subscriptionCancelAtPeriodEnd: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(userAccess.userId, userId));
+
+      return {
+        success: true,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      };
+    } catch (error) {
+      console.error("Error al reactivar suscripción:", error);
+      throw new Error("Error al reactivar suscripción");
+    }
+  }),
 });
 
