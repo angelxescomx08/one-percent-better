@@ -181,13 +181,13 @@ export default function CreateActivityPage() {
 	};
 
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 dark:bg-black md:p-8">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
 			<section className="mx-auto max-w-3xl space-y-6">
 				{/* Botón Volver */}
 				<Button
-					variant="ghost"
 					className="pl-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:text-slate-400"
 					onClick={() => router.back()}
+					variant="ghost"
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Cancelar y volver
@@ -216,8 +216,8 @@ export default function CreateActivityPage() {
 									{/* Campo Nombre */}
 									<Field data-invalid={!!errors.name}>
 										<FieldLabel
+											className="flex items-center gap-2 font-semibold text-base"
 											htmlFor="name"
-											className="flex items-center gap-2 text-base font-semibold"
 										>
 											<Type className="h-4 w-4 text-slate-400" />
 											Nombre de la actividad{" "}
@@ -225,9 +225,9 @@ export default function CreateActivityPage() {
 										</FieldLabel>
 										<FieldContent>
 											<Input
+												className="h-11 text-lg"
 												id="name"
 												placeholder="Ej: Leer 'Hábitos Atómicos', Ahorrar para viaje..."
-												className="h-11 text-lg"
 												type="text"
 												{...register("name")}
 												disabled={isSubmitting}
@@ -243,17 +243,15 @@ export default function CreateActivityPage() {
 										</FieldLabel>
 										<FieldContent>
 											<Textarea
+												className="resize-none"
 												id="description"
 												placeholder="¿Cuál es tu objetivo? Ej: Leer 10 páginas al día..."
 												rows={3}
-												className="resize-none"
 												{...register("description")}
 												disabled={isSubmitting}
 											/>
 											<FieldError
-												errors={
-													errors.description ? [errors.description] : []
-												}
+												errors={errors.description ? [errors.description] : []}
 											/>
 										</FieldContent>
 									</Field>
@@ -300,13 +298,13 @@ export default function CreateActivityPage() {
 														</SelectContent>
 													</Select>
 													<Button
+														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
 														disabled={isSubmitting}
 														onClick={() => setIsCategoryDialogOpen(true)}
 														size="icon"
 														title="Crear nueva categoría"
 														type="button"
 														variant="outline"
-														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
 													>
 														<Plus className="h-4 w-4" />
 													</Button>
@@ -323,8 +321,8 @@ export default function CreateActivityPage() {
 										{/* Campo Unidad con TOOLTIP */}
 										<Field data-invalid={!!errors.unitId}>
 											<FieldLabel
-												htmlFor="unitId"
 												className="flex items-center gap-2"
+												htmlFor="unitId"
 											>
 												Unidad de Medida{" "}
 												<span className="text-destructive">*</span>
@@ -334,8 +332,8 @@ export default function CreateActivityPage() {
 															<Info className="h-4 w-4 cursor-help text-indigo-500 transition-colors hover:text-indigo-600" />
 														</TooltipTrigger>
 														<TooltipContent
-															side="top"
 															className="max-w-xs border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-100"
+															side="top"
 														>
 															<p className="mb-1 font-semibold">
 																¿Cómo medirás el progreso?
@@ -390,13 +388,13 @@ export default function CreateActivityPage() {
 														</SelectContent>
 													</Select>
 													<Button
+														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
 														disabled={!selectedCategoryId || isSubmitting}
 														onClick={() => setIsUnitDialogOpen(true)}
 														size="icon"
 														title="Crear nueva unidad"
 														type="button"
 														variant="outline"
-														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
 													>
 														<Plus className="h-4 w-4" />
 													</Button>
@@ -423,9 +421,9 @@ export default function CreateActivityPage() {
 										Cancelar
 									</Button>
 									<Button
+										className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
 										disabled={isSubmitting}
 										type="submit"
-										className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
 									>
 										{isSubmitting ? "Guardando..." : "Crear actividad"}
 									</Button>
@@ -447,9 +445,7 @@ export default function CreateActivityPage() {
 							<div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
 								<Library className="h-5 w-5 text-slate-600 dark:text-slate-300" />
 							</div>
-							<DialogTitle className="text-center">
-								Nueva categoría
-							</DialogTitle>
+							<DialogTitle className="text-center">Nueva categoría</DialogTitle>
 							<DialogDescription className="text-center">
 								Organiza tus actividades por grupos.
 							</DialogDescription>
@@ -486,10 +482,7 @@ export default function CreateActivityPage() {
 								>
 									Cancelar
 								</Button>
-								<Button
-									disabled={createCategory.isPending}
-									type="submit"
-								>
+								<Button disabled={createCategory.isPending} type="submit">
 									Guardar
 								</Button>
 							</DialogFooter>
@@ -498,10 +491,7 @@ export default function CreateActivityPage() {
 				</Dialog>
 
 				{/* Diálogo Unidad */}
-				<Dialog
-					onOpenChange={setIsUnitDialogOpen}
-					open={isUnitDialogOpen}
-				>
+				<Dialog onOpenChange={setIsUnitDialogOpen} open={isUnitDialogOpen}>
 					<DialogContent>
 						<DialogHeader>
 							<div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50">
@@ -535,12 +525,8 @@ export default function CreateActivityPage() {
 									/>
 								</FieldContent>
 							</Field>
-							<Field
-								data-invalid={!!unitForm.formState.errors.shortName}
-							>
-								<FieldLabel htmlFor="unit-short-name">
-									Abreviatura
-								</FieldLabel>
+							<Field data-invalid={!!unitForm.formState.errors.shortName}>
+								<FieldLabel htmlFor="unit-short-name">Abreviatura</FieldLabel>
 								<FieldContent>
 									<Input
 										id="unit-short-name"

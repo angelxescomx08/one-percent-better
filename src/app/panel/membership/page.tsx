@@ -147,34 +147,7 @@ function AddPaymentMethodForm({
 }
 
 // Componente para mostrar opciones de compra
-function PricingSection({
-	membership,
-}: {
-	membership: {
-		type: "trial" | "subscription" | "lifetime";
-		hasLifetimeAccess: boolean;
-		trialEndsAt: Date | null;
-		subscription: {
-			id: string;
-			status: string;
-			currentPeriodEnd: number;
-			currentPeriodStart: number;
-			cancelAtPeriodEnd: boolean;
-			price: {
-				id: string | undefined;
-				amount: number | null | undefined;
-				currency: string | undefined;
-				interval: string | undefined;
-				intervalCount: number | undefined;
-			};
-			product: {
-				id: string | undefined;
-				name: string | null | undefined;
-				description: string | null | undefined;
-			};
-		} | null;
-	};
-}) {
+function PricingSection() {
 	const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
 	const [showCheckout, setShowCheckout] = useState(false);
 	const [checkoutType, setCheckoutType] = useState<"lifetime" | "subscription">(
@@ -185,11 +158,11 @@ function PricingSection({
 		api.stripe.getProductPrices.useQuery();
 
 	const utils = api.useUtils();
-	const createLifetimePaymentIntent =
-		api.stripe.createLifetimePaymentIntent.useMutation();
-	const createSubscription = api.stripe.createSubscription.useMutation();
 
-	const handlePurchase = async (priceId: string, type: "lifetime" | "subscription") => {
+	const handlePurchase = async (
+		priceId: string,
+		type: "lifetime" | "subscription",
+	) => {
 		setSelectedPriceId(priceId);
 		setCheckoutType(type);
 		setShowCheckout(true);
@@ -285,7 +258,9 @@ function PricingSection({
 							<Card className="relative border-2">
 								<CardHeader>
 									<div className="flex items-center justify-between">
-										<CardTitle className="text-lg">Acceso de por vida</CardTitle>
+										<CardTitle className="text-lg">
+											Acceso de por vida
+										</CardTitle>
 										<Crown className="h-5 w-5 text-amber-500" />
 									</div>
 									<CardDescription>
@@ -345,10 +320,7 @@ function PricingSection({
 									<Button
 										className="w-full"
 										onClick={() =>
-											handlePurchase(
-												prices.yearly[0]?.id ?? "",
-												"subscription",
-											)
+											handlePurchase(prices.yearly[0]?.id ?? "", "subscription")
 										}
 									>
 										Suscribirse
@@ -363,13 +335,13 @@ function PricingSection({
 			{/* Modal de checkout */}
 			{showCheckout && selectedPriceId && (
 				<CheckoutModal
-					priceId={selectedPriceId}
-					type={checkoutType}
-					onSuccess={handleCheckoutSuccess}
 					onCancel={() => {
 						setShowCheckout(false);
 						setSelectedPriceId(null);
 					}}
+					onSuccess={handleCheckoutSuccess}
+					priceId={selectedPriceId}
+					type={checkoutType}
 				/>
 			)}
 		</>
@@ -388,7 +360,6 @@ function CheckoutModal({
 	onSuccess: () => void;
 	onCancel: () => void;
 }) {
-	const [isProcessing, setIsProcessing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
@@ -448,7 +419,9 @@ function CheckoutModal({
 			} catch (err) {
 				console.error("Error al inicializar checkout:", err);
 				setError(
-					err instanceof Error ? err.message : "Error al inicializar el proceso de pago",
+					err instanceof Error
+						? err.message
+						: "Error al inicializar el proceso de pago",
 				);
 			} finally {
 				setIsInitializing(false);
@@ -456,8 +429,14 @@ function CheckoutModal({
 		};
 
 		void initializeCheckout();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [priceId, type]);
+	}, [
+		priceId,
+		type,
+		createLifetimePaymentIntent.mutateAsync,
+		createSubscription.mutateAsync,
+		paymentMethods?.defaultPaymentMethod,
+		onSuccess,
+	]);
 
 	if (isInitializing) {
 		return (
@@ -504,7 +483,11 @@ function CheckoutModal({
 			}
 			isOpen={true}
 			setIsOpen={onCancel}
-			title={type === "lifetime" ? "Comprar acceso de por vida" : "Activar suscripción"}
+			title={
+				type === "lifetime"
+					? "Comprar acceso de por vida"
+					: "Activar suscripción"
+			}
 		>
 			<Elements
 				options={{
@@ -517,9 +500,9 @@ function CheckoutModal({
 			>
 				<CheckoutForm
 					clientSecret={clientSecret}
-					type={type}
-					onSuccess={onSuccess}
 					onCancel={onCancel}
+					onSuccess={onSuccess}
+					type={type}
 				/>
 			</Elements>
 		</ModalDrawer>
@@ -998,9 +981,7 @@ export default function MembershipPage() {
 				</Card>
 
 				{/* Sección de Compra - Solo mostrar si no tiene acceso de por vida */}
-				{membership && membership.type !== "lifetime" && (
-					<PricingSection membership={membership} />
-				)}
+				{membership && membership.type !== "lifetime" && <PricingSection />}
 
 				{/* Métodos de Pago */}
 				<Card>
@@ -1119,13 +1100,13 @@ export default function MembershipPage() {
 						>
 							<AddPaymentMethodForm
 								clientSecret={setupIntentClientSecret}
-								setupIntentId={setupIntentId}
 								onCancel={() => {
 									setShowAddPaymentMethod(false);
 									setSetupIntentClientSecret(null);
 									setSetupIntentId(undefined);
 								}}
 								onSuccess={handlePaymentMethodAdded}
+								setupIntentId={setupIntentId}
 							/>
 						</Elements>
 					)}

@@ -14,3 +14,17 @@ Then run the following command to listen for webhook events:
 ```
 stripe listen --forward-to http://localhost:3000/api/stripe/webhook
 ```
+
+## Drizzle
+
+### Generate migrations
+
+```
+pnpm db:generate
+```
+
+### Migrate the database
+
+```
+pnpm db:migrate
+```

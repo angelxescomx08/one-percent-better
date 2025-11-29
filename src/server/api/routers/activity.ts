@@ -2,7 +2,14 @@ import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { activity, activityLog, category, unit, user, userActivity } from "~/server/db/schema";
+import {
+  activity,
+  activityLog,
+  category,
+  unit,
+  user,
+  userActivity,
+} from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
   getActivities: protectedProcedure.query(async ({ ctx }) => {
@@ -13,7 +20,7 @@ export const activityRouter = createTRPCRouter({
       .innerJoin(activity, eq(userActivity.activityId, activity.id))
       .where(eq(userActivity.userId, session.user.id));
 
-    return activities.map(activity => activity.activity);
+    return activities.map((activity) => activity.activity);
   }),
 
   getActivityById: protectedProcedure
@@ -28,8 +35,8 @@ export const activityRouter = createTRPCRouter({
         .where(
           and(
             eq(userActivity.userId, session.user.id),
-            eq(activity.id, input.activityId)
-          )
+            eq(activity.id, input.activityId),
+          ),
         )
         .limit(1);
 
@@ -156,8 +163,8 @@ export const activityRouter = createTRPCRouter({
         .where(
           and(
             eq(userActivity.userId, session.user.id),
-            eq(userActivity.activityId, input.activityId)
-          )
+            eq(userActivity.activityId, input.activityId),
+          ),
         )
         .limit(1);
 
@@ -212,8 +219,8 @@ export const activityRouter = createTRPCRouter({
         .where(
           and(
             eq(userActivity.userId, session.user.id),
-            eq(userActivity.activityId, input.activityId)
-          )
+            eq(userActivity.activityId, input.activityId),
+          ),
         )
         .limit(1);
 
@@ -336,10 +343,7 @@ export const activityRouter = createTRPCRouter({
         .from(activityLog)
         .innerJoin(user, eq(activityLog.userId, user.id))
         .where(
-          and(
-            eq(activityLog.activityId, input.activityId),
-            ...dateConditions,
-          ),
+          and(eq(activityLog.activityId, input.activityId), ...dateConditions),
         )
         .groupBy(activityLog.userId, user.name, user.email);
 
@@ -546,7 +550,10 @@ export const activityRouter = createTRPCRouter({
 
       // Llenar los espacios restantes con las mejores posiciones
       for (const ranking of validRankings) {
-        if (selectedRankings.length < 5 && !selectedRankings.includes(ranking)) {
+        if (
+          selectedRankings.length < 5 &&
+          !selectedRankings.includes(ranking)
+        ) {
           selectedRankings.push(ranking);
         }
       }
@@ -700,10 +707,8 @@ export const activityRouter = createTRPCRouter({
           }
 
           const currentAvg =
-            currentLogs.reduce(
-              (sum, log) => sum + Number(log.value),
-              0,
-            ) / currentLogs.length;
+            currentLogs.reduce((sum, log) => sum + Number(log.value), 0) /
+            currentLogs.length;
 
           if (previousLogs.length === 0) {
             // Si no hay datos anteriores, considerar mejora del 0%
@@ -718,10 +723,8 @@ export const activityRouter = createTRPCRouter({
           }
 
           const previousAvg =
-            previousLogs.reduce(
-              (sum, log) => sum + Number(log.value),
-              0,
-            ) / previousLogs.length;
+            previousLogs.reduce((sum, log) => sum + Number(log.value), 0) /
+            previousLogs.length;
 
           // Calcular porcentaje de mejora
           const improvementPercentage =
@@ -853,7 +856,10 @@ export const activityRouter = createTRPCRouter({
         .orderBy(activityLog.date);
 
       // Agrupar datos por período según el tipo seleccionado
-      const groupedData: Record<string, { date: string; value: number; count: number }> = {};
+      const groupedData: Record<
+        string,
+        { date: string; value: number; count: number }
+      > = {};
 
       logs.forEach((log) => {
         const logDate = new Date(log.date);
@@ -868,12 +874,13 @@ export const activityRouter = createTRPCRouter({
             // Agrupar por día
             key = logDate.toISOString().slice(0, 10);
             break;
-          case "month":
+          case "month": {
             // Agrupar por semana (lunes a domingo)
             const weekStart = new Date(logDate);
             weekStart.setDate(logDate.getDate() - logDate.getDay() + 1);
             key = weekStart.toISOString().slice(0, 10);
             break;
+          }
           case "year":
             // Agrupar por mes
             key = logDate.toISOString().slice(0, 7);
@@ -891,9 +898,11 @@ export const activityRouter = createTRPCRouter({
           if (!groupedData[key]) {
             groupedData[key] = { date: key, value: 0, count: 0 };
           }
-          const group = groupedData[key]!;
-          group.value += Number(log.value);
-          group.count += 1;
+          const group = groupedData[key];
+          if (group) {
+            group.value += Number(log.value);
+            group.count += 1;
+          }
         }
       });
 
@@ -902,7 +911,8 @@ export const activityRouter = createTRPCRouter({
         .map((item) => {
           return {
             date: item.date,
-            value: item.count > 0 ? Number((item.value / item.count).toFixed(2)) : 0,
+            value:
+              item.count > 0 ? Number((item.value / item.count).toFixed(2)) : 0,
           };
         })
         .sort((a, b) => a.date.localeCompare(b.date));
@@ -1006,7 +1016,12 @@ export const activityRouter = createTRPCRouter({
           userName: string;
           userEmail: string;
           totalScore: number;
-          activities: Array<{ activityId: string; activityName: string; categoryName: string; bestValue: number }>;
+          activities: Array<{
+            activityId: string;
+            activityName: string;
+            categoryName: string;
+            bestValue: number;
+          }>;
         }
       > = {};
 

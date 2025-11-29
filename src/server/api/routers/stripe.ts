@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import { z } from "zod";
+import { env } from "~/env";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { userAccess } from "~/server/db/schema";
-import { env } from "~/env";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-11-17.clover",
@@ -62,10 +62,12 @@ export const stripeRouter = createTRPCRouter({
           subscription: {
             id: subscription.id,
             status: subscription.status,
-            currentPeriodEnd: (subscription as unknown as { current_period_end: number })
-              .current_period_end,
-            currentPeriodStart: (subscription as unknown as { current_period_start: number })
-              .current_period_start,
+            currentPeriodEnd: (
+              subscription as unknown as { current_period_end: number }
+            ).current_period_end,
+            currentPeriodStart: (
+              subscription as unknown as { current_period_start: number }
+            ).current_period_start,
             cancelAtPeriodEnd: subscription.cancel_at_period_end,
             price: {
               id: price?.id,
@@ -126,15 +128,13 @@ export const stripeRouter = createTRPCRouter({
       });
 
       // Obtener el método de pago por defecto del cliente
-      const customer = await stripe.customers.retrieve(
-        access.stripeCustomerId,
-      );
+      const customer = await stripe.customers.retrieve(access.stripeCustomerId);
 
       const defaultPaymentMethodId =
         typeof customer === "object" && !customer.deleted
           ? typeof customer.invoice_settings.default_payment_method === "string"
             ? customer.invoice_settings.default_payment_method
-            : customer.invoice_settings.default_payment_method?.id ?? null
+            : (customer.invoice_settings.default_payment_method?.id ?? null)
           : null;
 
       const formattedPaymentMethods = paymentMethods.data.map((pm) => ({
@@ -239,7 +239,7 @@ export const stripeRouter = createTRPCRouter({
     const userId = ctx.session.user.id;
 
     // Obtener acceso del usuario
-    let access = await db.query.userAccess.findFirst({
+    const access = await db.query.userAccess.findFirst({
       where: eq(userAccess.userId, userId),
     });
 
@@ -353,7 +353,7 @@ export const stripeRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
 
       // Obtener acceso del usuario
-      let access = await db.query.userAccess.findFirst({
+      const access = await db.query.userAccess.findFirst({
         where: eq(userAccess.userId, userId),
       });
 
@@ -436,7 +436,7 @@ export const stripeRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
 
       // Obtener acceso del usuario
-      let access = await db.query.userAccess.findFirst({
+      const access = await db.query.userAccess.findFirst({
         where: eq(userAccess.userId, userId),
       });
 
@@ -446,7 +446,9 @@ export const stripeRouter = createTRPCRouter({
 
       // Verificar que no tenga ya acceso de por vida
       if (access.hasLifetimeAccess) {
-        throw new Error("Ya tienes acceso de por vida, no necesitas suscripción");
+        throw new Error(
+          "Ya tienes acceso de por vida, no necesitas suscripción",
+        );
       }
 
       try {
@@ -509,18 +511,19 @@ export const stripeRouter = createTRPCRouter({
           subscriptionData.default_payment_method = input.paymentMethodId;
         }
 
-        const subscriptionResponse = await stripe.subscriptions.create(
-          subscriptionData,
-        );
+        const subscriptionResponse =
+          await stripe.subscriptions.create(subscriptionData);
 
         // El resultado puede ser Subscription directamente o Response<Subscription>
         const subscription = subscriptionResponse as Stripe.Subscription;
 
         // Actualizar en la BD
-        const currentPeriodEnd = (subscription as unknown as { current_period_end: number })
-          .current_period_end;
-        const currentPeriodStart = (subscription as unknown as { current_period_start: number })
-          .current_period_start;
+        const currentPeriodEnd = (
+          subscription as unknown as { current_period_end: number }
+        ).current_period_end;
+        const currentPeriodStart = (
+          subscription as unknown as { current_period_start: number }
+        ).current_period_start;
 
         await db
           .update(userAccess)
@@ -544,13 +547,18 @@ export const stripeRouter = createTRPCRouter({
 
           if (invoiceId) {
             try {
-              const invoiceResponse = await stripe.invoices.retrieve(invoiceId, {
-                expand: ["payment_intent"],
-              });
+              const invoiceResponse = await stripe.invoices.retrieve(
+                invoiceId,
+                {
+                  expand: ["payment_intent"],
+                },
+              );
               const invoice = invoiceResponse as Stripe.Invoice;
-              const paymentIntentValue = (invoice as unknown as {
-                payment_intent: string | Stripe.PaymentIntent | null;
-              }).payment_intent;
+              const paymentIntentValue = (
+                invoice as unknown as {
+                  payment_intent: string | Stripe.PaymentIntent | null;
+                }
+              ).payment_intent;
               const paymentIntent =
                 typeof paymentIntentValue === "string" || !paymentIntentValue
                   ? null
@@ -593,10 +601,14 @@ export const stripeRouter = createTRPCRouter({
 
       try {
         // Obtener el setup intent
-        const setupIntent = await stripe.setupIntents.retrieve(input.setupIntentId);
+        const setupIntent = await stripe.setupIntents.retrieve(
+          input.setupIntentId,
+        );
 
         if (!setupIntent.payment_method) {
-          throw new Error("No se encontró el método de pago en el setup intent");
+          throw new Error(
+            "No se encontró el método de pago en el setup intent",
+          );
         }
 
         const paymentMethodId =
@@ -649,8 +661,9 @@ export const stripeRouter = createTRPCRouter({
         })
         .where(eq(userAccess.userId, userId));
 
-      const currentPeriodEnd = (subscription as unknown as { current_period_end: number })
-        .current_period_end;
+      const currentPeriodEnd = (
+        subscription as unknown as { current_period_end: number }
+      ).current_period_end;
 
       return {
         success: true,
@@ -704,4 +717,3 @@ export const stripeRouter = createTRPCRouter({
     }
   }),
 });
-

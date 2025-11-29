@@ -457,7 +457,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
   // Si es un reembolso relacionado con una suscripción, cancelarla
   if (access.stripeSubscriptionId) {
     try {
-      const subscription = await stripe.subscriptions.retrieve(
+      await stripe.subscriptions.retrieve(
         access.stripeSubscriptionId,
       );
 

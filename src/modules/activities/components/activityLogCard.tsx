@@ -36,9 +36,7 @@ export function ActivityLogCard({ log }: ActivityLogCardProps) {
 						<CardTitle className="text-lg">
 							{log.value} {unitName}
 						</CardTitle>
-						<CardDescription className="mt-1">
-							{formattedDate}
-						</CardDescription>
+						<CardDescription className="mt-1">{formattedDate}</CardDescription>
 					</div>
 				</div>
 			</CardHeader>
@@ -50,4 +48,3 @@ export function ActivityLogCard({ log }: ActivityLogCardProps) {
 		</Card>
 	);
 }
-
