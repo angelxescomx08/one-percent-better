@@ -48,7 +48,7 @@ export default function RegisterPage() {
 			<div className="-left-4 absolute top-0 h-96 w-96 animate-blob rounded-full bg-indigo-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-indigo-500/20" />
 			<div className="-right-4 animation-delay-2000 absolute bottom-0 h-96 w-96 animate-blob rounded-full bg-violet-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-violet-500/20" />
 
-			<Card className="fade-in zoom-in-95 z-10 w-full max-w-md animate-in border-slate-200 shadow-2xl duration-500 dark:border-slate-800">
+			<Card className="fade-in zoom-in-95 z-10 w-full max-w-md animate-in border border-slate-200/80 shadow-2xl transition-all duration-500 ease-in-out hover:shadow-indigo-500/10 dark:border-slate-800/80 dark:shadow-slate-900/50">
 				<CardHeader className="pt-6 pb-2">
 					<div className="mb-2 flex justify-center">
 						{/* Logo Pequeño de Marca */}
@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
 				<CardContent className="space-y-6">
 					{error && (
-						<div className="rounded-md bg-red-50 p-3 text-red-800 text-sm dark:bg-red-900/20 dark:text-red-200">
+						<div className="fade-in slide-in-from-top-2 animate-in rounded-md border border-red-200/80 bg-red-50/90 p-3 text-red-800 text-sm shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-200">
 							{error}
 						</div>
 					)}
@@ -77,7 +77,7 @@ export default function RegisterPage() {
 							<FieldLabel htmlFor="name">Nombre Completo</FieldLabel>
 							<FieldContent>
 								<Input
-									className="h-11 bg-slate-50 dark:bg-slate-900/50"
+									className="h-11 bg-slate-50 transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900/50 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 									id="name"
 									name="name"
 									onChange={(e) => setName(e.target.value)}
@@ -92,7 +92,7 @@ export default function RegisterPage() {
 							<FieldLabel htmlFor="email">Correo Electrónico</FieldLabel>
 							<FieldContent>
 								<Input
-									className="h-11 bg-slate-50 dark:bg-slate-900/50"
+									className="h-11 bg-slate-50 transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900/50 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 									id="email"
 									name="email"
 									onChange={(e) => setEmail(e.target.value)}
@@ -108,7 +108,7 @@ export default function RegisterPage() {
 							<FieldLabel htmlFor="password">Contraseña</FieldLabel>
 							<FieldContent>
 								<Input
-									className="h-11 bg-slate-50 dark:bg-slate-900/50"
+									className="h-11 bg-slate-50 transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900/50 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 									id="password"
 									name="password"
 									onChange={(e) => setPassword(e.target.value)}
@@ -122,7 +122,7 @@ export default function RegisterPage() {
 
 						{/* Botón Principal MODIFICADO */}
 						<Button
-							className="h-12 w-full bg-slate-900 font-semibold text-base text-white shadow-xl transition-transform hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98] dark:bg-white dark:text-black dark:hover:bg-slate-200"
+							className="h-12 w-full bg-slate-900 font-semibold text-base text-white shadow-xl transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-900/30 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 active:scale-[0.98] dark:bg-white dark:text-black dark:hover:bg-slate-200"
 							disabled={signUp.isPending}
 							type="submit"
 						>
@@ -155,7 +155,7 @@ export default function RegisterPage() {
 
 					<form action={signInWithGoogleAction}>
 						<Button
-							className="h-11 w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+							className="h-11 w-full border border-slate-200 bg-white text-slate-700 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-md focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800"
 							type="submit"
 							variant="outline"
 						>
@@ -171,7 +171,7 @@ export default function RegisterPage() {
 					</form>
 				</CardContent>
 
-				<CardFooter className="flex flex-col gap-2 border-t bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+				<CardFooter className="flex flex-col gap-2 border-slate-200/80 border-t bg-slate-50/50 p-6 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-900/50">
 					<p className="text-center text-slate-500 text-xs">
 						Al continuar, aceptas nuestros términos de servicio. Tu prueba de 7
 						días comienza al instante.

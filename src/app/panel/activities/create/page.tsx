@@ -175,11 +175,11 @@ export default function CreateActivityPage() {
 	};
 
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<section className="mx-auto max-w-3xl space-y-6">
 				{/* Botón Volver */}
 				<Button
-					className="pl-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:text-slate-400"
+					className="pl-0 text-slate-500 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-transparent hover:text-slate-900 active:scale-95 dark:text-slate-400"
 					onClick={() => router.back()}
 					variant="ghost"
 				>
@@ -187,8 +187,8 @@ export default function CreateActivityPage() {
 					Cancelar y volver
 				</Button>
 
-				<Card className="border-slate-200 shadow-xl dark:border-slate-800">
-					<CardHeader className="border-b bg-white pb-6 dark:bg-slate-950">
+				<Card className="border border-slate-200/80 shadow-xl transition-all duration-300 ease-in-out hover:shadow-2xl dark:border-slate-800/80">
+					<CardHeader className="border-slate-200/80 border-b bg-white pb-6 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-950">
 						<div className="flex items-center gap-3">
 							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
 								<Plus className="h-6 w-6" />
@@ -219,7 +219,7 @@ export default function CreateActivityPage() {
 										</FieldLabel>
 										<FieldContent>
 											<Input
-												className="h-11 text-lg"
+												className="h-11 text-lg transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 												id="name"
 												placeholder="Ej: Leer 'Hábitos Atómicos', Ahorrar para viaje..."
 												type="text"
@@ -237,7 +237,7 @@ export default function CreateActivityPage() {
 										</FieldLabel>
 										<FieldContent>
 											<Textarea
-												className="resize-none"
+												className="resize-none transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 												id="description"
 												placeholder="¿Cuál es tu objetivo? Ej: Leer 10 páginas al día..."
 												rows={3}
@@ -252,7 +252,7 @@ export default function CreateActivityPage() {
 								</div>
 
 								{/* --- SECCIÓN 2: CLASIFICACIÓN Y MEDICIÓN (Agrupado Visualmente) --- */}
-								<div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+								<div className="rounded-xl border border-slate-200/80 bg-slate-50/90 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/50">
 									<h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
 										<LayoutGrid className="h-4 w-4 text-indigo-500" />
 										Configuración de Medición
@@ -292,7 +292,7 @@ export default function CreateActivityPage() {
 														</SelectContent>
 													</Select>
 													<Button
-														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
+														className="shrink-0 bg-white transition-all duration-300 ease-in-out hover:scale-110 hover:bg-slate-100 hover:shadow-md active:scale-95 dark:bg-slate-950 dark:hover:bg-slate-800"
 														disabled={isSubmitting}
 														onClick={() => setIsCategoryDialogOpen(true)}
 														size="icon"
@@ -382,7 +382,7 @@ export default function CreateActivityPage() {
 														</SelectContent>
 													</Select>
 													<Button
-														className="shrink-0 bg-white hover:bg-slate-100 dark:bg-slate-950"
+														className="shrink-0 bg-white transition-all duration-300 ease-in-out hover:scale-110 hover:bg-slate-100 hover:shadow-md active:scale-95 dark:bg-slate-950 dark:hover:bg-slate-800"
 														disabled={!selectedCategoryId || isSubmitting}
 														onClick={() => setIsUnitDialogOpen(true)}
 														size="icon"
@@ -415,7 +415,7 @@ export default function CreateActivityPage() {
 										Cancelar
 									</Button>
 									<Button
-										className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+										className="bg-indigo-600 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-indigo-700 hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
 										disabled={isSubmitting}
 										type="submit"
 									>

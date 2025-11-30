@@ -169,7 +169,7 @@ function PricingSection() {
 
 	if (isLoadingPrices) {
 		return (
-			<Card>
+			<Card className="border border-slate-200/80 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80">
 				<CardHeader>
 					<CardTitle>Opciones de Compra</CardTitle>
 					<CardDescription>
@@ -211,7 +211,7 @@ function PricingSection() {
 					<div className="grid gap-4 md:grid-cols-3">
 						{/* Precio mensual */}
 						{prices.monthly.length > 0 && (
-							<Card className="border-2">
+							<Card className="border-2 border-slate-200/80 shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] dark:border-slate-800/80">
 								<CardHeader>
 									<CardTitle className="text-lg">Suscripción Mensual</CardTitle>
 									<CardDescription>
@@ -231,7 +231,7 @@ function PricingSection() {
 										</p>
 									</div>
 									<Button
-										className="w-full"
+										className="w-full transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md focus:ring-2 focus:ring-offset-2 active:scale-95"
 										onClick={() =>
 											handlePurchase(
 												prices.monthly[0]?.id ?? "",
@@ -248,7 +248,7 @@ function PricingSection() {
 
 						{/* Precio de por vida */}
 						{prices.lifetime.length > 0 && (
-							<Card className="relative border-2">
+							<Card className="relative border-2 border-amber-400/50 shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-amber-500/70 hover:shadow-xl active:scale-[0.98] dark:border-amber-500/30">
 								<CardHeader>
 									<div className="flex items-center justify-between">
 										<CardTitle className="text-lg">
@@ -273,7 +273,7 @@ function PricingSection() {
 										</p>
 									</div>
 									<Button
-										className="w-full"
+										className="w-full transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md focus:ring-2 focus:ring-offset-2 active:scale-95"
 										onClick={() =>
 											handlePurchase(prices.lifetime[0]?.id ?? "", "lifetime")
 										}
@@ -288,7 +288,7 @@ function PricingSection() {
 
 						{/* Precio anual */}
 						{prices.yearly.length > 0 && (
-							<Card className="border-2 border-primary">
+							<Card className="border-2 border-indigo-500/50 shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-indigo-600/70 hover:shadow-xl active:scale-[0.98] dark:border-indigo-400/50">
 								<CardHeader>
 									<div className="flex items-center justify-between">
 										<CardTitle className="text-lg">Suscripción Anual</CardTitle>
@@ -311,7 +311,7 @@ function PricingSection() {
 										</p>
 									</div>
 									<Button
-										className="w-full"
+										className="w-full transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg focus:ring-2 focus:ring-offset-2 active:scale-95"
 										onClick={() =>
 											handlePurchase(prices.yearly[0]?.id ?? "", "subscription")
 										}
@@ -794,7 +794,7 @@ export default function MembershipPage() {
 	};
 
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<div className="mx-auto max-w-4xl space-y-6">
 				{/* Header */}
 				<div>
@@ -807,7 +807,7 @@ export default function MembershipPage() {
 				</div>
 
 				{/* Información de Membresía */}
-				<Card>
+				<Card className="border border-slate-200/80 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80">
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<div>
@@ -1033,7 +1033,7 @@ export default function MembershipPage() {
 				{membership && membership.type !== "lifetime" && <PricingSection />}
 
 				{/* Métodos de Pago */}
-				<Card>
+				<Card className="border border-slate-200/80 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80">
 					<CardHeader>
 						<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 							<div>
@@ -1043,7 +1043,7 @@ export default function MembershipPage() {
 								</CardDescription>
 							</div>
 							<Button
-								className="w-full md:w-auto"
+								className="w-full transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md focus:ring-2 focus:ring-offset-2 active:scale-95 md:w-auto"
 								disabled={createSetupIntent.isPending}
 								onClick={handleAddPaymentMethod}
 							>
@@ -1068,7 +1068,7 @@ export default function MembershipPage() {
 							<div className="space-y-3">
 								{paymentMethods?.paymentMethods.map((pm) => (
 									<div
-										className="flex flex-col gap-4 rounded-lg border p-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between dark:hover:bg-slate-900"
+										className="flex flex-col gap-4 rounded-lg border border-slate-200/80 p-4 shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.01] hover:bg-slate-50 hover:shadow-md active:scale-[0.99] sm:flex-row sm:items-center sm:justify-between dark:border-slate-800/80 dark:hover:bg-slate-900"
 										key={pm.id}
 									>
 										<div className="flex items-center gap-4">

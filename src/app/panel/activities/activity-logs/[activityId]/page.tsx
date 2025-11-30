@@ -133,13 +133,13 @@ export default function ActivityLogsPage() {
 	const hasFilters = startDate || endDate;
 
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<div className="mx-auto max-w-7xl space-y-8">
 				{/* === HEADER SECTION === */}
 				<div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
 					<div className="space-y-1">
 						<Button
-							className="-ml-2 mb-2 h-auto p-2 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+							className="-ml-2 mb-2 h-auto p-2 text-slate-500 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-transparent hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:text-slate-200"
 							onClick={() => router.push("/panel/activities")}
 							variant="ghost"
 						>
@@ -166,7 +166,7 @@ export default function ActivityLogsPage() {
 
 					<div className="flex shrink-0 items-center gap-2">
 						<Button
-							className="bg-indigo-600 shadow-indigo-500/20 shadow-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+							className="bg-indigo-600 shadow-indigo-500/20 shadow-lg transition-all duration-300 ease-in-out hover:scale-105 hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:shadow-xl focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
 							onClick={() =>
 								router.push(`/panel/activities/progress/register/${activityId}`)
 							}
@@ -180,7 +180,7 @@ export default function ActivityLogsPage() {
 				<Separator className="bg-slate-200 dark:bg-slate-800" />
 
 				{/* === TOOLBAR DE FILTROS === */}
-				<div className="-mx-1 sticky top-4 z-10 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+				<div className="-mx-1 sticky top-4 z-10 rounded-2xl border border-slate-200/80 bg-white/90 p-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80 dark:bg-slate-900/90">
 					<div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:p-2">
 						<div className="flex items-center gap-2 pl-2 font-medium text-slate-500 text-sm dark:text-slate-400">
 							<History className="h-4 w-4 shrink-0" />
@@ -218,7 +218,7 @@ export default function ActivityLogsPage() {
 
 							{hasFilters && (
 								<Button
-									className="h-9 px-3 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+									className="h-9 px-3 text-red-500 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-red-50 hover:text-red-600 active:scale-95 dark:hover:bg-red-900/20"
 									onClick={handleClearFilters}
 									size="sm"
 									variant="ghost"
@@ -315,9 +315,9 @@ export default function ActivityLogsPage() {
 									registros
 								</p>
 
-								<div className="flex items-center gap-1 rounded-md bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+								<div className="flex items-center gap-1 rounded-md border border-slate-200/80 bg-white/90 p-1 shadow-md backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/90">
 									<Button
-										className="h-8 w-8 rounded-sm"
+										className="h-8 w-8 rounded-sm transition-all duration-300 ease-in-out hover:scale-110 active:scale-95"
 										disabled={offset === 0}
 										onClick={handlePreviousPage}
 										size="icon"
@@ -329,7 +329,7 @@ export default function ActivityLogsPage() {
 										Pág. {currentPage} / {totalPages || 1}
 									</span>
 									<Button
-										className="h-8 w-8 rounded-sm"
+										className="h-8 w-8 rounded-sm transition-all duration-300 ease-in-out hover:scale-110 active:scale-95"
 										disabled={!logsData.hasMore}
 										onClick={handleNextPage}
 										size="icon"

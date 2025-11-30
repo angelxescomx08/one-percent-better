@@ -20,7 +20,7 @@ export default function Activities() {
 	);
 
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<div className="mx-auto max-w-7xl space-y-8">
 				{/* HEADER & CONTROLES */}
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -36,16 +36,16 @@ export default function Activities() {
 					<div className="flex items-center gap-2">
 						{/* Barra de búsqueda decorativa (funcional si pasas props) */}
 						<div className="relative hidden md:block">
-							<Search className="absolute top-2.5 left-2.5 h-4 w-4 text-slate-400" />
+							<Search className="absolute top-2.5 left-2.5 h-4 w-4 text-slate-400 transition-colors duration-300 ease-in-out" />
 							<Input
-								className="w-64 bg-white pl-9 shadow-sm dark:bg-slate-900"
+								className="w-64 border border-slate-200/80 bg-white pl-9 shadow-sm transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-800/80 dark:bg-slate-900 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 								onChange={(e) => setSearchTerm(e.target.value)}
 								placeholder="Buscar actividad..."
 								value={searchTerm}
 							/>
 						</div>
 						<Button
-							className="bg-indigo-600 shadow-indigo-500/20 shadow-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+							className="bg-indigo-600 shadow-indigo-500/20 shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
 							onClick={() => router.push("/panel/activities/create")}
 						>
 							<Plus className="mr-2 h-4 w-4" />
@@ -78,7 +78,7 @@ export default function Activities() {
 
 				{/* EMPTY STATE (Diseño mejorado) */}
 				{!isLoading && (!activities || activities.length === 0) && (
-					<div className="fade-in zoom-in-95 flex min-h-[400px] animate-in flex-col items-center justify-center rounded-3xl border-2 border-slate-200 border-dashed bg-slate-50/50 p-8 text-center duration-500 dark:border-slate-800 dark:bg-slate-900/50">
+					<div className="fade-in zoom-in-95 flex min-h-[400px] animate-in flex-col items-center justify-center rounded-3xl border-2 border-slate-200/80 border-dashed bg-slate-50/50 p-8 text-center shadow-sm transition-all duration-500 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/50">
 						<div className="rounded-full bg-white p-4 shadow-sm ring-1 ring-slate-100 dark:bg-slate-800 dark:ring-slate-700">
 							<Telescope className="h-10 w-10 text-slate-400" />
 						</div>
@@ -90,7 +90,7 @@ export default function Activities() {
 							métricas y visualizar tu progreso.
 						</p>
 						<Button
-							className="mt-8"
+							className="mt-8 transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-md focus:ring-2 focus:ring-offset-2 active:scale-95"
 							onClick={() => router.push("/panel/activities/create")}
 							variant="outline"
 						>

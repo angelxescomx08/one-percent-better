@@ -46,7 +46,7 @@ export default function Header() {
 	const isActive = (path: string) => pathname === path;
 
 	return (
-		<header className="sticky top-0 z-50 w-full border-slate-200 border-b bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-black/80">
+		<header className="sticky top-0 z-50 w-full border-slate-200/80 border-b bg-white/90 shadow-sm backdrop-blur-lg transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-black/90">
 			<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 				{/* === LOGO & BRANDING === */}
 				<Link
@@ -54,7 +54,7 @@ export default function Header() {
 					href="/panel"
 				>
 					{/* Isotipo con gradiente */}
-					<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 shadow-indigo-500/20 shadow-lg transition-transform group-hover:scale-105">
+					<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 shadow-indigo-500/20 shadow-lg transition-all duration-300 ease-in-out group-hover:scale-110 group-hover:shadow-xl group-active:scale-95">
 						<Zap className="h-5 w-5 fill-white text-white" />
 					</div>
 					{/* Texto del logo */}
@@ -78,7 +78,7 @@ export default function Header() {
 						const Icon = item.icon;
 						return (
 							<Link
-								className={`group flex items-center gap-2 rounded-full px-4 py-2 font-medium text-sm transition-all duration-200 ${
+								className={`group flex items-center gap-2 rounded-full px-4 py-2 font-medium text-sm transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 ${
 									active
 										? "bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:ring-indigo-800"
 										: "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
@@ -106,7 +106,7 @@ export default function Header() {
 									className="relative h-10 w-10 rounded-full hover:bg-transparent"
 									variant="ghost"
 								>
-									<Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-2 ring-slate-100 transition-all hover:ring-indigo-200 dark:border-slate-900 dark:ring-slate-800">
+									<Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-2 ring-slate-100 transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-md hover:ring-indigo-200 active:scale-95 dark:border-slate-900 dark:ring-slate-800">
 										<AvatarImage
 											alt={user?.name || "Usuario"}
 											src={user?.image || ""}
@@ -195,7 +195,7 @@ export default function Header() {
 											const Icon = item.icon;
 											return (
 												<Link
-													className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-sm transition-colors ${
+													className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-sm transition-all duration-300 ease-in-out hover:scale-[1.02] active:scale-[0.98] ${
 														active
 															? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
 															: "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"

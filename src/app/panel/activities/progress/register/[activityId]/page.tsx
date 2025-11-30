@@ -155,11 +155,11 @@ export default function RegisterProgressPage() {
 	const shortUnit = activityData.unit.shortName;
 
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<section className="mx-auto max-w-xl space-y-6">
 				{/* Navegación */}
 				<Button
-					className="pl-0 text-slate-500 hover:bg-transparent hover:text-slate-900 dark:text-slate-400"
+					className="pl-0 text-slate-500 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-transparent hover:text-slate-900 active:scale-95 dark:text-slate-400"
 					onClick={() => router.back()}
 					variant="ghost"
 				>
@@ -167,8 +167,8 @@ export default function RegisterProgressPage() {
 					Cancelar y volver
 				</Button>
 
-				<Card className="fade-in slide-in-from-bottom-4 animate-in border-slate-200 shadow-xl duration-500 dark:border-slate-800">
-					<CardHeader className="rounded-t-xl bg-white pb-6 dark:bg-slate-950">
+				<Card className="fade-in slide-in-from-bottom-4 animate-in border border-slate-200/80 shadow-xl transition-all duration-500 ease-in-out hover:shadow-2xl dark:border-slate-800/80">
+					<CardHeader className="rounded-t-xl border-slate-200/80 border-b bg-white/95 pb-6 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-950/95">
 						<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 							<div className="flex items-start gap-4">
 								<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
@@ -246,7 +246,7 @@ export default function RegisterProgressPage() {
 													placeholder="0.00"
 													type="text"
 													{...register("value")}
-													className="pr-12 font-medium font-mono text-lg tracking-tight"
+													className="pr-12 font-medium font-mono text-lg tracking-tight transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 													disabled={isSubmitting}
 												/>
 												<div className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-bold text-slate-400 text-xs uppercase">
@@ -269,7 +269,7 @@ export default function RegisterProgressPage() {
 									</FieldLabel>
 									<FieldContent>
 										<Textarea
-											className="resize-none bg-slate-50 dark:bg-slate-900/50"
+											className="resize-none bg-slate-50 transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900/50 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 											id="note"
 											placeholder="¿Cómo te sentiste? ¿Algún detalle importante a recordar?"
 											rows={4}
@@ -295,7 +295,7 @@ export default function RegisterProgressPage() {
 										Cancelar
 									</Button>
 									<Button
-										className="w-full bg-indigo-600 shadow-sm hover:bg-indigo-700 sm:w-auto dark:bg-indigo-500 dark:hover:bg-indigo-600"
+										className="w-full bg-indigo-600 shadow-sm transition-all duration-300 ease-in-out hover:scale-105 hover:bg-indigo-700 hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-95 sm:w-auto dark:bg-indigo-500 dark:hover:bg-indigo-600"
 										disabled={isSubmitting}
 										type="submit"
 									>

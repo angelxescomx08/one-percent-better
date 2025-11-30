@@ -212,7 +212,7 @@ export default function PanelPage() {
 
 	// --- Renderizado ---
 	return (
-		<div className="min-h-screen w-full bg-slate-50/50 p-4 md:p-8 dark:bg-black">
+		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<div className="mx-auto max-w-7xl space-y-6">
 				{/* Header & Controls */}
 				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -225,7 +225,7 @@ export default function PanelPage() {
 						</p>
 					</div>
 
-					<div className="flex items-center gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200">
+					<div className="flex items-center gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/90">
 						{(Object.keys(PERIOD_LABELS) as Period[]).map((period) => {
 							const currentPeriod =
 								activeTab === "rankings" ? rankingPeriod : improvementPeriod;
@@ -236,10 +236,10 @@ export default function PanelPage() {
 							const isActive = currentPeriod === period;
 							return (
 								<Button
-									className={`rounded-md px-3 py-1.5 font-medium text-xs transition-all ${
+									className={`rounded-md px-3 py-1.5 font-medium text-xs transition-all duration-300 ease-in-out ${
 										isActive
-											? "bg-slate-900 text-white shadow-sm"
-											: "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+											? "bg-slate-900 text-white shadow-sm hover:shadow-md active:scale-95"
+											: "bg-transparent text-slate-600 hover:scale-105 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
 									}`}
 									key={period}
 									onClick={() => setPeriod(period)}
@@ -258,16 +258,16 @@ export default function PanelPage() {
 					onValueChange={(v) => setActiveTab(v as "rankings" | "improvements")}
 					value={activeTab}
 				>
-					<TabsList className="grid w-full max-w-[400px] grid-cols-2 bg-slate-100 p-1">
+					<TabsList className="grid w-full max-w-[400px] grid-cols-2 border border-slate-200/80 bg-slate-100/90 p-1 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/90">
 						<TabsTrigger
-							className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm"
+							className="transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm data-[state=active]:active:scale-95 data-[state=inactive]:hover:bg-slate-200/50 data-[state=active]:hover:shadow-md dark:data-[state=active]:bg-slate-800 dark:data-[state=inactive]:hover:bg-slate-800/50"
 							value="rankings"
 						>
 							<Trophy className="mr-2 h-4 w-4" />
 							Rankings
 						</TabsTrigger>
 						<TabsTrigger
-							className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm"
+							className="transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm data-[state=active]:active:scale-95 data-[state=inactive]:hover:bg-slate-200/50 data-[state=active]:hover:shadow-md dark:data-[state=active]:bg-slate-800 dark:data-[state=inactive]:hover:bg-slate-800/50"
 							value="improvements"
 						>
 							<TrendingUp className="mr-2 h-4 w-4" />
@@ -310,7 +310,7 @@ export default function PanelPage() {
 														actividad para comenzar a rastrear tu progreso.
 													</p>
 													<Button
-														className="mt-2"
+														className="mt-2 transition-all duration-300 ease-in-out hover:scale-105 active:scale-95"
 														onClick={() =>
 															router.push("/panel/activities/create")
 														}
@@ -353,7 +353,7 @@ export default function PanelPage() {
 
 											return (
 												<Card
-													className={`group relative cursor-pointer overflow-hidden border-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${style.border} bg-linear-to-br ${style.gradient}`}
+													className={`group relative cursor-pointer overflow-hidden border-2 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] ${style.border} bg-linear-to-br ${style.gradient}`}
 													key={ranking.activity.id}
 													onClick={() =>
 														setSelectedActivityId(ranking.activity.id)
@@ -493,8 +493,8 @@ export default function PanelPage() {
 
 							{/* Columna Derecha: Ranking General (1/3 ancho) */}
 							<div className="lg:col-span-2">
-								<Card className="flex h-full flex-col border-slate-200 shadow-sm dark:border-slate-800">
-									<CardHeader className="border-b bg-slate-50/40 pb-4 dark:bg-slate-900/40">
+								<Card className="flex h-full flex-col border border-slate-200/80 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80">
+									<CardHeader className="border-slate-200/80 border-b bg-slate-50/40 pb-4 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-900/40">
 										<div className="mb-1 flex items-center gap-2">
 											<Trophy className="h-4 w-4 text-purple-500" />
 											<h3 className="font-semibold text-slate-900 dark:text-white">
@@ -517,7 +517,7 @@ export default function PanelPage() {
 												{/* Tabla con scroll interno si es muy larga */}
 												<div className="custom-scrollbar max-h-[600px] overflow-auto">
 													<Table>
-														<TableHeader className="sticky top-0 z-20 bg-white shadow-sm dark:bg-slate-950">
+														<TableHeader className="sticky top-0 z-20 border-slate-200/80 border-b-2 bg-white/95 shadow-sm backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-950/95">
 															<TableRow className="border-slate-100 border-b-2 dark:border-slate-800">
 																<TableHead className="w-12 text-center font-bold text-slate-400 text-xs uppercase">
 																	Rank
@@ -599,7 +599,7 @@ export default function PanelPage() {
 
 																	return (
 																		<TableRow
-																			className={`group border-slate-50 border-b transition-colors dark:border-slate-900 ${
+																			className={`group border-slate-50 border-b transition-all duration-300 ease-in-out hover:shadow-sm dark:border-slate-900 ${
 																				isTop3 && top3Style
 																					? `${top3Style.rowBg} hover:opacity-90`
 																					: isMe
@@ -730,7 +730,7 @@ export default function PanelPage() {
 													const unit = imp.unit.shortName ?? imp.unit.name;
 													return (
 														<Card
-															className="overflow-hidden border-l-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800"
+															className="overflow-hidden border border-slate-200/80 border-l-4 shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] dark:border-slate-800/80"
 															key={imp.activity.id}
 															style={{
 																borderLeftColor: isPositive

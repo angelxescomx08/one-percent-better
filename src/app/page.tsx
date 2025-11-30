@@ -59,12 +59,12 @@ export default async function Home() {
 				<div className="-left-4 absolute top-0 h-72 w-72 animate-blob rounded-full bg-indigo-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-indigo-500/20" />
 				<div className="-right-4 animation-delay-2000 absolute top-0 h-72 w-72 animate-blob rounded-full bg-violet-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-violet-500/20" />
 
-				<Card className="z-10 w-full max-w-md border-slate-200 shadow-xl dark:border-slate-800">
+				<Card className="z-10 w-full max-w-md border border-slate-200/80 shadow-2xl transition-all duration-300 ease-in-out hover:shadow-indigo-500/10 dark:border-slate-800/80 dark:shadow-slate-900/50">
 					<CardHeader className="space-y-4 pb-2">
 						{/* LOGO CENTRADO */}
 						<div className="mb-2 flex justify-center">
-							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 shadow-indigo-500/30 shadow-lg">
-								<Zap className="h-7 w-7 fill-white text-white" />
+							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 shadow-indigo-500/30 shadow-lg transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-indigo-500/50">
+								<Zap className="h-7 w-7 fill-white text-white transition-transform duration-300 ease-in-out" />
 							</div>
 						</div>
 
@@ -89,7 +89,7 @@ export default async function Home() {
 								</FieldLabel>
 								<FieldContent>
 									<Input
-										className="h-11 bg-slate-50 dark:bg-slate-900/50"
+										className="h-11 bg-slate-50 transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900/50 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 										id="email"
 										name="email"
 										placeholder="tucorreo@ejemplo.com"
@@ -107,7 +107,7 @@ export default async function Home() {
 										Contraseña
 									</FieldLabel>
 									<Link
-										className="font-medium text-indigo-600 text-xs hover:text-indigo-500 dark:text-indigo-400"
+										className="font-medium text-indigo-600 text-xs transition-all duration-300 ease-in-out hover:text-indigo-500 hover:underline dark:text-indigo-400"
 										href="/forgot-password"
 									>
 										¿Olvidaste tu contraseña?
@@ -115,7 +115,7 @@ export default async function Home() {
 								</div>
 								<FieldContent>
 									<Input
-										className="h-11 bg-slate-50 dark:bg-slate-900/50"
+										className="h-11 bg-slate-50 transition-all duration-300 ease-in-out hover:border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900/50 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20 dark:hover:border-slate-700"
 										id="password"
 										name="password"
 										placeholder="••••••••"
@@ -126,7 +126,7 @@ export default async function Home() {
 							</Field>
 
 							<Button
-								className="h-11 w-full bg-indigo-600 text-base shadow-indigo-500/20 shadow-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+								className="h-11 w-full bg-indigo-600 text-base shadow-indigo-500/20 shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-[0.98] dark:bg-indigo-500 dark:hover:bg-indigo-600"
 								type="submit"
 							>
 								Iniciar Sesión
@@ -146,7 +146,7 @@ export default async function Home() {
 
 						<form action={signInWithGoogle}>
 							<Button
-								className="h-11 w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+								className="h-11 w-full border border-slate-200 bg-white text-slate-700 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-md focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800"
 								type="submit"
 								variant="outline"
 							>
@@ -163,11 +163,11 @@ export default async function Home() {
 						</form>
 					</CardContent>
 
-					<CardFooter className="flex flex-col space-y-4 border-t bg-slate-50/50 p-6 dark:border-slate-800 dark:bg-slate-900/50">
+					<CardFooter className="flex flex-col space-y-4 border-slate-200/80 border-t bg-slate-50/50 p-6 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-900/50">
 						<div className="text-center text-slate-500 text-sm dark:text-slate-400">
 							¿No tienes una cuenta?{" "}
 							<Link
-								className="font-medium text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-400"
+								className="font-medium text-indigo-600 underline-offset-4 transition-all duration-300 ease-in-out hover:text-indigo-500 hover:underline dark:text-indigo-400"
 								href="/register"
 							>
 								Regístrate gratis

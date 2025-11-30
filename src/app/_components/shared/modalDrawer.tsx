@@ -59,8 +59,8 @@ export default function ModalDrawer({
 	if (isMobile) {
 		return (
 			<Drawer onOpenChange={setIsOpen} open={isOpen}>
-				<DrawerOverlay />
-				<DrawerContent>
+				<DrawerOverlay className="bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out" />
+				<DrawerContent className="border-slate-200/80 border-t bg-white/95 shadow-2xl backdrop-blur-lg transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-950/95">
 					<div className="mx-auto w-full max-w-md">
 						<DrawerHeader>
 							{title && <DrawerTitle>{title}</DrawerTitle>}
@@ -81,8 +81,8 @@ export default function ModalDrawer({
 	// --- DESKTOP (MODAL / DIALOG) ---
 	return (
 		<Dialog onOpenChange={setIsOpen} open={isOpen}>
-			<DialogOverlay />
-			<DialogContent className="flex max-h-[calc(100vh-4rem)] max-w-md flex-col gap-4">
+			<DialogOverlay className="bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out" />
+			<DialogContent className="flex max-h-[calc(100vh-4rem)] max-w-md flex-col gap-4 border border-slate-200/80 bg-white/95 shadow-2xl backdrop-blur-lg transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-950/95">
 				<DialogHeader>
 					{title && <DialogTitle>{title}</DialogTitle>}
 					{description && <DialogDescription>{description}</DialogDescription>}
