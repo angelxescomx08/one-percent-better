@@ -181,27 +181,39 @@ export default function ActivityLogsPage() {
 
 				{/* === TOOLBAR DE FILTROS === */}
 				<div className="-mx-1 sticky top-4 z-10 rounded-2xl border border-slate-200 bg-white/80 p-1 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
-					<div className="flex flex-col gap-2 p-2 sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:p-2">
 						<div className="flex items-center gap-2 pl-2 font-medium text-slate-500 text-sm dark:text-slate-400">
-							<History className="h-4 w-4" />
-							<span className="hidden sm:inline">Filtrar por fecha:</span>
+							<History className="h-4 w-4 shrink-0" />
+							<span>Filtrar por fecha</span>
 						</div>
 
 						<div className="flex flex-1 flex-col gap-2 sm:flex-row sm:justify-end">
-							<div className="flex flex-wrap items-center gap-2">
-								<DatePicker
-									className="w-full sm:w-[160px]"
-									date={startDate}
-									onDateChange={handleStartDateChange}
-									placeholder="Desde..."
-								/>
-								<span className="text-slate-300 dark:text-slate-700">→</span>
-								<DatePicker
-									className="w-full sm:w-[160px]"
-									date={endDate}
-									onDateChange={handleEndDateChange}
-									placeholder="Hasta..."
-								/>
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+								<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+									<span className="font-medium text-slate-600 text-xs sm:hidden dark:text-slate-400">
+										Desde
+									</span>
+									<DatePicker
+										className="w-full sm:w-[160px]"
+										date={startDate}
+										onDateChange={handleStartDateChange}
+										placeholder="Desde..."
+									/>
+								</div>
+								<span className="hidden self-center text-slate-300 text-sm sm:inline dark:text-slate-700">
+									→
+								</span>
+								<div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+									<span className="font-medium text-slate-600 text-xs sm:hidden dark:text-slate-400">
+										Hasta
+									</span>
+									<DatePicker
+										className="w-full sm:w-[160px]"
+										date={endDate}
+										onDateChange={handleEndDateChange}
+										placeholder="Hasta..."
+									/>
+								</div>
 							</div>
 
 							{hasFilters && (

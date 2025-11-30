@@ -230,6 +230,43 @@ export default function Header() {
 											</div>
 										</div>
 
+										{/* User Menu Options Mobile */}
+										<div className="flex flex-col gap-2 border-slate-100 border-t pt-4 dark:border-slate-800">
+											<Link
+												className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-sm transition-colors ${
+													isActive("/panel/settings")
+														? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+														: "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+												}`}
+												href="/panel/settings"
+											>
+												<Settings className="h-5 w-5" />
+												Configuración
+											</Link>
+											<Link
+												className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-sm transition-colors ${
+													isActive("/panel/profile")
+														? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+														: "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+												}`}
+												href="/panel/profile"
+											>
+												<User className="h-5 w-5" />
+												Mi Perfil
+											</Link>
+											<Link
+												className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium text-sm transition-colors ${
+													isActive("/panel/membership")
+														? "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+														: "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+												}`}
+												href="/panel/membership"
+											>
+												<BadgeDollarSign className="h-5 w-5" />
+												Mi membresía
+											</Link>
+										</div>
+
 										<Button
 											className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/20"
 											onClick={() => signOutAction()}

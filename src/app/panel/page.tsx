@@ -6,10 +6,13 @@ import {
 	BarChart3,
 	Crown,
 	Medal,
+	NotebookPen,
+	Plus,
 	TrendingDown,
 	TrendingUp,
 	Trophy,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
 	Area,
@@ -100,6 +103,7 @@ const DEFAULT_RANK_STYLE = {
 };
 
 export default function PanelPage() {
+	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<"rankings" | "improvements">(
 		"rankings",
 	);
@@ -110,6 +114,7 @@ export default function PanelPage() {
 	const [improvementPeriod, setImprovementPeriod] = useState<Period>("week");
 
 	// --- Queries TRPC ---
+	const { data: activities } = api.activity.getActivities.useQuery();
 	const { data: topRankingsData, isLoading: isLoadingTopRankings } =
 		api.activity.getTopRankings.useQuery(
 			{ period: rankingPeriod },
@@ -140,6 +145,26 @@ export default function PanelPage() {
 		);
 
 	// --- Preparación de datos ---
+	// Filtrar ranking general: mostrar top 10 + usuario actual (si no está en top 10)
+	const displayRankings = generalRankingData
+		? (() => {
+				const top10 = generalRankingData.rankings.slice(0, 10);
+				const currentUserRanking = generalRankingData.rankings.find(
+					(r) => r.userId === generalRankingData.currentUserId,
+				);
+				const isUserInTop10 =
+					currentUserRanking &&
+					top10.some((r) => r.userId === currentUserRanking.userId);
+
+				if (isUserInTop10 || !currentUserRanking) {
+					return top10;
+				}
+
+				return [...top10, currentUserRanking];
+			})()
+		: [];
+
+	const hasNoActivities = !activities || activities.length === 0;
 	const chartData =
 		improvementsData?.map((imp) => ({
 			name: imp.activity.name,
@@ -170,7 +195,7 @@ export default function PanelPage() {
 						</p>
 					</div>
 
-					<div className="flex items-center gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+					<div className="flex items-center gap-1 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200">
 						{(Object.keys(PERIOD_LABELS) as Period[]).map((period) => {
 							const currentPeriod =
 								activeTab === "rankings" ? rankingPeriod : improvementPeriod;
@@ -183,11 +208,12 @@ export default function PanelPage() {
 								<Button
 									className={`rounded-md px-3 py-1.5 font-medium text-xs transition-all ${
 										isActive
-											? "bg-slate-950 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950"
-											: "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+											? "bg-slate-900 text-white shadow-sm"
+											: "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900"
 									}`}
 									key={period}
 									onClick={() => setPeriod(period)}
+									variant={isActive ? "default" : "ghost"}
 								>
 									{PERIOD_LABELS[period]}
 								</Button>
@@ -202,16 +228,16 @@ export default function PanelPage() {
 					onValueChange={(v) => setActiveTab(v as "rankings" | "improvements")}
 					value={activeTab}
 				>
-					<TabsList className="grid w-full max-w-[400px] grid-cols-2 bg-slate-200/50 p-1 dark:bg-slate-900/50">
+					<TabsList className="grid w-full max-w-[400px] grid-cols-2 bg-slate-100 p-1">
 						<TabsTrigger
-							className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+							className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm"
 							value="rankings"
 						>
 							<Trophy className="mr-2 h-4 w-4" />
 							Rankings
 						</TabsTrigger>
 						<TabsTrigger
-							className="data-[state=active]:bg-white data-[state=active]:shadow-sm"
+							className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm"
 							value="improvements"
 						>
 							<TrendingUp className="mr-2 h-4 w-4" />
@@ -246,8 +272,47 @@ export default function PanelPage() {
 								) : !topRankingsData?.length ? (
 									<Alert>
 										<AlertTitle>Sin actividad</AlertTitle>
-										<AlertDescription>
-											No tienes rankings registrados en este periodo.
+										<AlertDescription className="space-y-3">
+											{hasNoActivities ? (
+												<>
+													<p>
+														No tienes actividades registradas. Crea tu primera
+														actividad para comenzar a rastrear tu progreso.
+													</p>
+													<Button
+														className="mt-2"
+														onClick={() =>
+															router.push("/panel/activities/create")
+														}
+														size="sm"
+													>
+														<Plus className="mr-2 h-4 w-4" />
+														Agregar Actividad
+													</Button>
+												</>
+											) : (
+												<>
+													<p>
+														No tienes rankings registrados en este periodo.
+														Registra tu progreso en alguna actividad para
+														aparecer en los rankings.
+													</p>
+													{activities && activities.length > 0 && (
+														<Button
+															className="mt-2"
+															onClick={() =>
+																router.push(
+																	`/panel/activities/progress/register/${activities[0]?.id}`,
+																)
+															}
+															size="sm"
+														>
+															<NotebookPen className="mr-2 h-4 w-4" />
+															Registrar Progreso
+														</Button>
+													)}
+												</>
+											)}
 										</AlertDescription>
 									</Alert>
 								) : (
@@ -436,55 +501,157 @@ export default function PanelPage() {
 															</TableRow>
 														</TableHeader>
 														<TableBody>
-															{generalRankingData?.rankings.map(
-																(ranking, i) => {
+															{displayRankings.length === 0 ? (
+																<TableRow>
+																	<TableCell
+																		className="p-8 text-center"
+																		colSpan={3}
+																	>
+																		{hasNoActivities ? (
+																			<div className="space-y-3">
+																				<p className="text-slate-500 text-sm dark:text-slate-400">
+																					No hay rankings disponibles. Crea tu
+																					primera actividad para comenzar.
+																				</p>
+																				<Button
+																					onClick={() =>
+																						router.push(
+																							"/panel/activities/create",
+																						)
+																					}
+																					size="sm"
+																				>
+																					<Plus className="mr-2 h-4 w-4" />
+																					Agregar Actividad
+																				</Button>
+																			</div>
+																		) : (
+																			<p className="text-slate-500 text-sm dark:text-slate-400">
+																				No hay rankings disponibles en este
+																				periodo.
+																			</p>
+																		)}
+																	</TableCell>
+																</TableRow>
+															) : (
+																displayRankings.map((ranking) => {
 																	const isMe =
+																		generalRankingData &&
 																		ranking.userId ===
-																		generalRankingData.currentUserId;
-																	const isTop3 = i < 3;
+																			generalRankingData.currentUserId;
+																	const isTop3 = ranking.position <= 3;
+																	const top3Styles = [
+																		{
+																			bg: "bg-amber-500",
+																			text: "text-amber-50",
+																			border: "border-amber-500/30",
+																			rowBg:
+																				"bg-amber-50/50 dark:bg-amber-950/20",
+																		},
+																		{
+																			bg: "bg-slate-400",
+																			text: "text-slate-50",
+																			border: "border-slate-400/30",
+																			rowBg:
+																				"bg-slate-50/50 dark:bg-slate-900/20",
+																		},
+																		{
+																			bg: "bg-orange-500",
+																			text: "text-orange-50",
+																			border: "border-orange-500/30",
+																			rowBg:
+																				"bg-orange-50/50 dark:bg-orange-950/20",
+																		},
+																	];
+																	const top3Style = isTop3
+																		? top3Styles[ranking.position - 1]
+																		: null;
 
 																	return (
 																		<TableRow
-																			className={`group border-slate-50 border-b transition-colors dark:border-slate-900 ${isMe ? "bg-indigo-50/60 hover:bg-indigo-100/60 dark:bg-indigo-950/20" : "hover:bg-slate-50 dark:hover:bg-slate-900"}
-                                    `}
+																			className={`group border-slate-50 border-b transition-colors dark:border-slate-900 ${
+																				isTop3 && top3Style
+																					? `${top3Style.rowBg} hover:opacity-90`
+																					: isMe
+																						? "bg-indigo-50/80 hover:bg-indigo-100/80 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/40"
+																						: "hover:bg-slate-50 dark:hover:bg-slate-900"
+																			}`}
 																			key={ranking.userId}
 																		>
 																			<TableCell className="p-3 text-center">
 																				<div
-																					className={`mx-auto flex h-6 w-6 items-center justify-center rounded-full font-bold text-xs ${isTop3 ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950" : "bg-slate-100 text-slate-500 dark:bg-slate-800"}
-                                      `}
+																					className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full font-bold text-xs ${
+																						isTop3 && top3Style
+																							? `${top3Style.bg} ${top3Style.text} shadow-md`
+																							: isMe
+																								? "bg-indigo-500 text-white shadow-sm"
+																								: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+																					}`}
 																				>
 																					{ranking.position}
 																				</div>
 																			</TableCell>
 																			<TableCell className="p-3">
-																				<div className="flex flex-col">
-																					<span
-																						className={`font-medium text-sm ${isMe ? "text-indigo-700 dark:text-indigo-400" : ""}`}
-																					>
-																						{ranking.userName}
-																					</span>
-																					{isMe && (
-																						<span className="font-medium text-[10px] text-indigo-500">
-																							Tú
-																						</span>
+																				<div className="flex items-center gap-2">
+																					{isTop3 && (
+																						<>
+																							{ranking.position === 1 && (
+																								<Crown className="h-4 w-4 text-amber-500" />
+																							)}
+																							{ranking.position === 2 && (
+																								<Medal className="h-4 w-4 text-slate-400" />
+																							)}
+																							{ranking.position === 3 && (
+																								<Medal className="h-4 w-4 text-orange-500" />
+																							)}
+																						</>
 																					)}
+																					<div className="flex flex-col">
+																						<span
+																							className={`font-semibold text-sm ${
+																								isTop3
+																									? "text-slate-900 dark:text-slate-100"
+																									: isMe
+																										? "text-indigo-700 dark:text-indigo-400"
+																										: "text-slate-700 dark:text-slate-300"
+																							}`}
+																						>
+																							{ranking.userName}
+																						</span>
+																						{isMe && (
+																							<span className="font-medium text-[10px] text-indigo-500">
+																								Tú
+																							</span>
+																						)}
+																					</div>
 																				</div>
 																			</TableCell>
 																			<TableCell className="p-3 text-right">
 																				<Badge
-																					className="font-mono font-normal"
-																					variant="secondary"
+																					className={`font-mono font-normal ${
+																						isTop3
+																							? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+																							: isMe
+																								? "bg-indigo-500 text-white"
+																								: ""
+																					}`}
+																					variant={
+																						isTop3 || isMe
+																							? "default"
+																							: "secondary"
+																					}
 																				>
 																					{ranking.totalScore.toLocaleString(
 																						"es-ES",
-																						{ maximumFractionDigits: 0 },
+																						{
+																							maximumFractionDigits: 0,
+																						},
 																					)}
 																				</Badge>
 																			</TableCell>
 																		</TableRow>
 																	);
-																},
+																})
 															)}
 														</TableBody>
 													</Table>
@@ -502,273 +669,345 @@ export default function PanelPage() {
 						className="fade-in slide-in-from-bottom-2 animate-in space-y-6"
 						value="improvements"
 					>
-						{/* KPI Cards de Resumen */}
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-							{isLoadingImprovements
-								? [1, 2, 3, 4].map((i) => (
-										<Skeleton className="h-32 w-full rounded-xl" key={i} />
-									))
-								: improvementsData?.slice(0, 4).map((imp) => {
-										const isPositive = imp.improvementPercentage > 0;
-										const unit = imp.unit.shortName ?? imp.unit.name;
-										return (
-											<Card
-												className="overflow-hidden border-l-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800"
-												key={imp.activity.id}
-												style={{
-													borderLeftColor: isPositive ? "#10b981" : "#f43f5e",
-												}}
-											>
-												<CardContent className="p-5">
-													<div className="mb-2 flex items-start justify-between">
-														<p
-															className="truncate font-medium text-slate-500 text-sm"
-															title={imp.activity.name}
+						{hasNoActivities ? (
+							<Alert>
+								<AlertTitle>No hay datos para mostrar</AlertTitle>
+								<AlertDescription className="space-y-3">
+									<p>
+										No tienes actividades registradas. Crea tu primera actividad
+										para comenzar a rastrear tu progreso y ver tus mejoras.
+									</p>
+									<Button
+										onClick={() => router.push("/panel/activities/create")}
+										size="sm"
+									>
+										<Plus className="mr-2 h-4 w-4" />
+										Agregar Actividad
+									</Button>
+								</AlertDescription>
+							</Alert>
+						) : (
+							<>
+								{/* KPI Cards de Resumen */}
+								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+									{isLoadingImprovements
+										? [1, 2, 3, 4].map((i) => (
+												<Skeleton className="h-32 w-full rounded-xl" key={i} />
+											))
+										: improvementsData && improvementsData.length > 0
+											? improvementsData.slice(0, 4).map((imp) => {
+													const isPositive = imp.improvementPercentage > 0;
+													const unit = imp.unit.shortName ?? imp.unit.name;
+													return (
+														<Card
+															className="overflow-hidden border-l-4 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800"
+															key={imp.activity.id}
+															style={{
+																borderLeftColor: isPositive
+																	? "#10b981"
+																	: "#f43f5e",
+															}}
 														>
-															{imp.activity.name}
-														</p>
-														{isPositive ? (
-															<div className="rounded-full bg-emerald-100 p-1 text-emerald-600 dark:bg-emerald-900/30">
-																<ArrowUpRight className="h-3 w-3" />
-															</div>
-														) : (
-															<div className="rounded-full bg-rose-100 p-1 text-rose-600 dark:bg-rose-900/30">
-																<TrendingDown className="h-3 w-3" />
-															</div>
-														)}
-													</div>
-													<div className="flex items-baseline gap-2">
-														<h3 className="font-bold text-2xl tracking-tight">
-															{Math.abs(imp.improvementPercentage).toFixed(1)}%
-														</h3>
-														<span
-															className={`font-bold text-xs uppercase ${isPositive ? "text-emerald-600" : "text-rose-600"}`}
-														>
-															{isPositive ? "Mejora" : "Baja"}
-														</span>
-													</div>
-													<p className="mt-2 text-slate-400 text-xs">
-														{imp.currentAvg} {unit} (vs {imp.previousAvg})
-													</p>
-												</CardContent>
-											</Card>
-										);
-									})}
-						</div>
-
-						{/* Gráficos */}
-						<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-							{/* Gráfico 1: Evolución */}
-							<Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-2 text-base">
-										<Activity className="h-4 w-4 text-emerald-500" />
-										Evolución del Rendimiento
-									</CardTitle>
-									<CardDescription>
-										Tu promedio a lo largo del tiempo
-									</CardDescription>
-								</CardHeader>
-								<CardContent className="min-h-[350px] flex-1 p-2 sm:p-6">
-									<div className="h-[300px] w-full min-w-0">
-										{" "}
-										{/* min-w-0 evita overflow en grid */}
-										{isLoadingProgressHistory ? (
-											<Skeleton className="h-full w-full" />
-										) : (
-											<ResponsiveContainer height="100%" width="100%">
-												<AreaChart
-													data={progressHistoryData?.data}
-													margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-												>
-													<defs>
-														<linearGradient
-															id="colorVal"
-															x1="0"
-															x2="0"
-															y1="0"
-															y2="1"
-														>
-															<stop
-																offset="5%"
-																stopColor="#10b981"
-																stopOpacity={0.2}
-															/>
-															<stop
-																offset="95%"
-																stopColor="#10b981"
-																stopOpacity={0}
-															/>
-														</linearGradient>
-													</defs>
-													<CartesianGrid
-														opacity={0.6}
-														stroke="#e2e8f0"
-														strokeDasharray="3 3"
-														vertical={false}
-													/>
-													<XAxis
-														axisLine={false}
-														dataKey="date"
-														dy={10}
-														minTickGap={30}
-														tick={{ fontSize: 11, fill: "#94a3b8" }}
-														tickLine={false}
-													/>
-													<YAxis
-														axisLine={false}
-														tick={{ fontSize: 11, fill: "#94a3b8" }}
-														tickLine={false}
-													/>
-													<Tooltip
-														contentStyle={{
-															borderRadius: "8px",
-															border: "none",
-															boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-														}}
-														formatter={(value: number) => [
-															`${value.toFixed(2)} pts`,
-															"Promedio",
-														]}
-														labelStyle={{
-															color: "#64748b",
-															marginBottom: "0.25rem",
-														}}
-													/>
-													<Area
-														dataKey="value"
-														fill="url(#colorVal)"
-														stroke="#10b981"
-														strokeWidth={2.5}
-														type="monotone"
-													/>
-												</AreaChart>
-											</ResponsiveContainer>
-										)}
-									</div>
-								</CardContent>
-							</Card>
-
-							{/* Gráfico 2: Comparativa Barras */}
-							<Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-2 text-base">
-										<BarChart3 className="h-4 w-4 text-blue-500" />
-										Comparativa: {PERIOD_LABELS[improvementPeriod]}
-									</CardTitle>
-									<CardDescription>
-										Actual vs Anterior por actividad
-									</CardDescription>
-								</CardHeader>
-								<CardContent className="min-h-[350px] flex-1 p-2 sm:p-6">
-									<div className="h-[300px] w-full min-w-0">
-										{" "}
-										{/* min-w-0 esencial para responsive */}
-										<ChartContainer
-											className="h-full w-full"
-											config={chartConfig}
-										>
-											<ResponsiveContainer height="100%" width="100%">
-												<BarChart
-													barCategoryGap="20%"
-													data={chartData}
-													layout="vertical"
-													margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
-												>
-													<CartesianGrid
-														horizontal={false}
-														opacity={0.6}
-														stroke="#e2e8f0"
-													/>
-													<YAxis
-														axisLine={false}
-														dataKey="name"
-														tick={{ fontSize: 11, fill: "#64748b" }}
-														tickFormatter={(value) =>
-															value.length > 15
-																? `${value.substring(0, 15)}...`
-																: value
-														}
-														tickLine={false}
-														type="category"
-														// Truco para truncar texto largo en YAxis si es necesario
-														width={100}
-													/>
-													<XAxis hide type="number" />
-													<Tooltip
-														content={({ active, payload }) => {
-															if (
-																active &&
-																payload &&
-																Array.isArray(payload) &&
-																payload.length > 1 &&
-																payload[0]?.payload &&
-																payload[0]?.payload.name &&
-																payload[0]?.payload.unidad
-															) {
-																const data = payload[0].payload;
-																return (
-																	<div className="rounded-lg border bg-white p-3 shadow-lg ring-1 ring-black/5 dark:border-slate-800 dark:bg-slate-900">
-																		<p className="mb-2 border-b pb-1 font-semibold text-sm dark:border-slate-800">
-																			{data.name}
-																		</p>
-																		<div className="space-y-1.5 text-xs">
-																			<div className="flex justify-between gap-4">
-																				<div className="flex items-center gap-2">
-																					<div className="h-2 w-2 rounded-full bg-emerald-500" />
-																					<span className="text-slate-500">
-																						Actual:
-																					</span>
-																				</div>
-																				<span className="font-medium font-mono">
-																					{payload[0]?.value} {data.unidad}
-																				</span>
-																			</div>
-																			<div className="flex justify-between gap-4">
-																				<div className="flex items-center gap-2">
-																					<div className="h-2 w-2 rounded-full bg-slate-400" />
-																					<span className="text-slate-500">
-																						Anterior:
-																					</span>
-																				</div>
-																				<span className="font-medium font-mono">
-																					{payload[1]?.value} {data.unidad}
-																				</span>
-																			</div>
+															<CardContent className="p-5">
+																<div className="mb-2 flex items-start justify-between">
+																	<p
+																		className="truncate font-medium text-slate-500 text-sm"
+																		title={imp.activity.name}
+																	>
+																		{imp.activity.name}
+																	</p>
+																	{isPositive ? (
+																		<div className="rounded-full bg-emerald-100 p-1 text-emerald-600 dark:bg-emerald-900/30">
+																			<ArrowUpRight className="h-3 w-3" />
 																		</div>
-																	</div>
-																);
-															}
-															return null;
-														}}
-														cursor={{ fill: "transparent" }}
-													/>
-													<Legend
-														iconType="circle"
-														wrapperStyle={{
-															fontSize: "12px",
-															paddingTop: "10px",
-														}}
-													/>
-													<Bar
-														barSize={12}
-														dataKey="actual"
-														fill="#10b981"
-														radius={[0, 4, 4, 0]}
-													/>
-													<Bar
-														barSize={12}
-														dataKey="anterior"
-														fill="#cbd5e1"
-														radius={[0, 4, 4, 0]}
-													/>
-												</BarChart>
-											</ResponsiveContainer>
-										</ChartContainer>
+																	) : (
+																		<div className="rounded-full bg-rose-100 p-1 text-rose-600 dark:bg-rose-900/30">
+																			<TrendingDown className="h-3 w-3" />
+																		</div>
+																	)}
+																</div>
+																<div className="flex items-baseline gap-2">
+																	<h3 className="font-bold text-2xl tracking-tight">
+																		{Math.abs(
+																			imp.improvementPercentage,
+																		).toFixed(1)}
+																		%
+																	</h3>
+																	<span
+																		className={`font-bold text-xs uppercase ${isPositive ? "text-emerald-600" : "text-rose-600"}`}
+																	>
+																		{isPositive ? "Mejora" : "Baja"}
+																	</span>
+																</div>
+																<p className="mt-2 text-slate-400 text-xs">
+																	{imp.currentAvg} {unit} (vs {imp.previousAvg})
+																</p>
+															</CardContent>
+														</Card>
+													);
+												})
+											: null}
+								</div>
+
+								{/* Mostrar alerta si hay actividades pero no hay datos de mejoras */}
+								{!isLoadingImprovements &&
+									(!improvementsData || improvementsData.length === 0) && (
+										<Alert>
+											<AlertTitle>No hay datos para mostrar</AlertTitle>
+											<AlertDescription className="space-y-3">
+												<p>
+													No tienes datos de progreso registrados en este
+													periodo. Registra algunas actividades para ver tus
+													mejoras.
+												</p>
+												{activities && activities.length > 0 && (
+													<Button
+														className="mt-2"
+														onClick={() =>
+															router.push(
+																`/panel/activities/progress/register/${activities[0]?.id}`,
+															)
+														}
+														size="sm"
+													>
+														<NotebookPen className="mr-2 h-4 w-4" />
+														Registrar Progreso
+													</Button>
+												)}
+											</AlertDescription>
+										</Alert>
+									)}
+
+								{/* Gráficos */}
+								{improvementsData && improvementsData.length > 0 && (
+									<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+										{/* Gráfico 1: Evolución */}
+										<Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
+											<CardHeader>
+												<CardTitle className="flex items-center gap-2 text-base">
+													<Activity className="h-4 w-4 text-emerald-500" />
+													Evolución del Rendimiento
+												</CardTitle>
+												<CardDescription>
+													Tu promedio a lo largo del tiempo
+												</CardDescription>
+											</CardHeader>
+											<CardContent className="min-h-[350px] flex-1 p-2 sm:p-6">
+												<div className="h-[300px] w-full min-w-0">
+													{" "}
+													{/* min-w-0 evita overflow en grid */}
+													{isLoadingProgressHistory ? (
+														<Skeleton className="h-full w-full" />
+													) : (
+														<ResponsiveContainer height="100%" width="100%">
+															<AreaChart
+																data={progressHistoryData?.data}
+																margin={{
+																	top: 10,
+																	right: 10,
+																	left: -20,
+																	bottom: 0,
+																}}
+															>
+																<defs>
+																	<linearGradient
+																		id="colorVal"
+																		x1="0"
+																		x2="0"
+																		y1="0"
+																		y2="1"
+																	>
+																		<stop
+																			offset="5%"
+																			stopColor="#10b981"
+																			stopOpacity={0.2}
+																		/>
+																		<stop
+																			offset="95%"
+																			stopColor="#10b981"
+																			stopOpacity={0}
+																		/>
+																	</linearGradient>
+																</defs>
+																<CartesianGrid
+																	opacity={0.6}
+																	stroke="#e2e8f0"
+																	strokeDasharray="3 3"
+																	vertical={false}
+																/>
+																<XAxis
+																	axisLine={false}
+																	dataKey="date"
+																	dy={10}
+																	minTickGap={30}
+																	tick={{ fontSize: 11, fill: "#94a3b8" }}
+																	tickLine={false}
+																/>
+																<YAxis
+																	axisLine={false}
+																	tick={{ fontSize: 11, fill: "#94a3b8" }}
+																	tickLine={false}
+																/>
+																<Tooltip
+																	contentStyle={{
+																		borderRadius: "8px",
+																		border: "none",
+																		boxShadow:
+																			"0 4px 6px -1px rgb(0 0 0 / 0.1)",
+																	}}
+																	formatter={(value: number) => [
+																		`${value.toFixed(2)} pts`,
+																		"Promedio",
+																	]}
+																	labelStyle={{
+																		color: "#64748b",
+																		marginBottom: "0.25rem",
+																	}}
+																/>
+																<Area
+																	dataKey="value"
+																	fill="url(#colorVal)"
+																	stroke="#10b981"
+																	strokeWidth={2.5}
+																	type="monotone"
+																/>
+															</AreaChart>
+														</ResponsiveContainer>
+													)}
+												</div>
+											</CardContent>
+										</Card>
+
+										{/* Gráfico 2: Comparativa Barras */}
+										<Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
+											<CardHeader>
+												<CardTitle className="flex items-center gap-2 text-base">
+													<BarChart3 className="h-4 w-4 text-blue-500" />
+													Comparativa: {PERIOD_LABELS[improvementPeriod]}
+												</CardTitle>
+												<CardDescription>
+													Actual vs Anterior por actividad
+												</CardDescription>
+											</CardHeader>
+											<CardContent className="min-h-[350px] flex-1 p-2 sm:p-6">
+												<div className="h-[300px] w-full min-w-0">
+													{" "}
+													{/* min-w-0 esencial para responsive */}
+													<ChartContainer
+														className="h-full w-full"
+														config={chartConfig}
+													>
+														<ResponsiveContainer height="100%" width="100%">
+															<BarChart
+																barCategoryGap="20%"
+																data={chartData}
+																layout="vertical"
+																margin={{
+																	top: 0,
+																	right: 20,
+																	left: 0,
+																	bottom: 0,
+																}}
+															>
+																<CartesianGrid
+																	horizontal={false}
+																	opacity={0.6}
+																	stroke="#e2e8f0"
+																/>
+																<YAxis
+																	axisLine={false}
+																	dataKey="name"
+																	tick={{ fontSize: 11, fill: "#64748b" }}
+																	tickFormatter={(value) =>
+																		value.length > 15
+																			? `${value.substring(0, 15)}...`
+																			: value
+																	}
+																	tickLine={false}
+																	type="category"
+																	// Truco para truncar texto largo en YAxis si es necesario
+																	width={100}
+																/>
+																<XAxis hide type="number" />
+																<Tooltip
+																	content={({ active, payload }) => {
+																		if (
+																			active &&
+																			payload &&
+																			Array.isArray(payload) &&
+																			payload.length > 1 &&
+																			payload[0]?.payload &&
+																			payload[0]?.payload.name &&
+																			payload[0]?.payload.unidad
+																		) {
+																			const data = payload[0].payload;
+																			return (
+																				<div className="rounded-lg border bg-white p-3 shadow-lg ring-1 ring-black/5 dark:border-slate-800 dark:bg-slate-900">
+																					<p className="mb-2 border-b pb-1 font-semibold text-sm dark:border-slate-800">
+																						{data.name}
+																					</p>
+																					<div className="space-y-1.5 text-xs">
+																						<div className="flex justify-between gap-4">
+																							<div className="flex items-center gap-2">
+																								<div className="h-2 w-2 rounded-full bg-emerald-500" />
+																								<span className="text-slate-500">
+																									Actual:
+																								</span>
+																							</div>
+																							<span className="font-medium font-mono">
+																								{payload[0]?.value}{" "}
+																								{data.unidad}
+																							</span>
+																						</div>
+																						<div className="flex justify-between gap-4">
+																							<div className="flex items-center gap-2">
+																								<div className="h-2 w-2 rounded-full bg-slate-400" />
+																								<span className="text-slate-500">
+																									Anterior:
+																								</span>
+																							</div>
+																							<span className="font-medium font-mono">
+																								{payload[1]?.value}{" "}
+																								{data.unidad}
+																							</span>
+																						</div>
+																					</div>
+																				</div>
+																			);
+																		}
+																		return null;
+																	}}
+																	cursor={{ fill: "transparent" }}
+																/>
+																<Legend
+																	iconType="circle"
+																	wrapperStyle={{
+																		fontSize: "12px",
+																		paddingTop: "10px",
+																	}}
+																/>
+																<Bar
+																	barSize={12}
+																	dataKey="actual"
+																	fill="#10b981"
+																	radius={[0, 4, 4, 0]}
+																/>
+																<Bar
+																	barSize={12}
+																	dataKey="anterior"
+																	fill="#cbd5e1"
+																	radius={[0, 4, 4, 0]}
+																/>
+															</BarChart>
+														</ResponsiveContainer>
+													</ChartContainer>
+												</div>
+											</CardContent>
+										</Card>
 									</div>
-								</CardContent>
-							</Card>
-						</div>
+								)}
+							</>
+						)}
 					</TabsContent>
 				</Tabs>
 			</div>
