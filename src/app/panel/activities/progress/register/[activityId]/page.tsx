@@ -167,8 +167,8 @@ export default function RegisterProgressPage() {
 					Cancelar y volver
 				</Button>
 
-				<Card className="fade-in slide-in-from-bottom-4 animate-in border border-slate-200/80 shadow-xl transition-all duration-500 ease-in-out hover:shadow-2xl dark:border-slate-800/80">
-					<CardHeader className="rounded-t-xl border-slate-200/80 border-b bg-white/95 pb-6 backdrop-blur-sm dark:border-slate-800/80 dark:bg-slate-950/95">
+				<Card className="fade-in slide-in-from-bottom-4 animate-in border border-slate-200/80 shadow-xl transition-all duration-500 hover:shadow-2xl dark:border-slate-800/80">
+					<CardHeader className="fade-in slide-in-from-top-4 animate-in rounded-t-xl border-slate-200/80 border-b bg-white/95 pb-6 backdrop-blur-sm delay-100 duration-500 dark:border-slate-800/80 dark:bg-slate-950/95">
 						<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 							<div className="flex items-start gap-4">
 								<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
@@ -198,7 +198,7 @@ export default function RegisterProgressPage() {
 						<form onSubmit={handleSubmit(onSubmit)}>
 							<FieldGroup className="space-y-6">
 								{/* 1. FECHA Y VALOR (Grid) */}
-								<div className="grid gap-6 md:grid-cols-2">
+								<div className="fade-in slide-in-from-bottom-4 grid animate-in gap-6 delay-200 duration-500 md:grid-cols-2">
 									{/* Campo Fecha */}
 									<Field data-invalid={!!errors.date}>
 										<FieldLabel
@@ -259,7 +259,10 @@ export default function RegisterProgressPage() {
 								</div>
 
 								{/* 2. NOTA ADICIONAL */}
-								<Field data-invalid={!!errors.note}>
+								<Field
+									className="fade-in slide-in-from-bottom-4 animate-in delay-300 duration-500"
+									data-invalid={!!errors.note}
+								>
 									<FieldLabel
 										className="flex items-center gap-2 text-slate-700 dark:text-slate-300"
 										htmlFor="note"
@@ -284,7 +287,7 @@ export default function RegisterProgressPage() {
 								</Field>
 
 								{/* 3. BOTONES DE ACCIÓN */}
-								<div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-end">
+								<div className="fade-in slide-in-from-bottom-4 flex animate-in flex-col-reverse gap-3 pt-4 delay-400 duration-500 sm:flex-row sm:justify-end">
 									<Button
 										className="w-full sm:w-auto"
 										disabled={isSubmitting}

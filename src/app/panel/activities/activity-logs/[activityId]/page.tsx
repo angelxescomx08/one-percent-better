@@ -137,7 +137,7 @@ export default function ActivityLogsPage() {
 			<div className="mx-auto max-w-7xl space-y-8">
 				{/* === HEADER SECTION === */}
 				<div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-					<div className="space-y-1">
+					<div className="fade-in slide-in-from-left-4 animate-in space-y-1 duration-500">
 						<Button
 							className="-ml-2 mb-2 h-auto p-2 text-slate-500 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-transparent hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:text-slate-200"
 							onClick={() => router.push("/panel/activities")}
@@ -164,7 +164,7 @@ export default function ActivityLogsPage() {
 						</p>
 					</div>
 
-					<div className="flex shrink-0 items-center gap-2">
+					<div className="fade-in slide-in-from-right-4 flex shrink-0 animate-in items-center gap-2 delay-100 duration-500">
 						<Button
 							className="bg-indigo-600 shadow-indigo-500/20 shadow-lg transition-all duration-300 ease-in-out hover:scale-105 hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:shadow-xl focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-95 dark:bg-indigo-500 dark:hover:bg-indigo-600"
 							onClick={() =>
@@ -180,7 +180,7 @@ export default function ActivityLogsPage() {
 				<Separator className="bg-slate-200 dark:bg-slate-800" />
 
 				{/* === TOOLBAR DE FILTROS === */}
-				<div className="-mx-1 sticky top-4 z-10 rounded-2xl border border-slate-200/80 bg-white/90 p-1 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80 dark:bg-slate-900/90">
+				<div className="-mx-1 fade-in slide-in-from-bottom-4 sticky top-4 z-10 animate-in rounded-2xl border border-slate-200/80 bg-white/90 p-1 shadow-lg backdrop-blur-md transition-all delay-150 duration-500 hover:shadow-xl dark:border-slate-800/80 dark:bg-slate-900/90">
 					<div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:p-2">
 						<div className="flex items-center gap-2 pl-2 font-medium text-slate-500 text-sm dark:text-slate-400">
 							<History className="h-4 w-4 shrink-0" />
@@ -285,18 +285,27 @@ export default function ActivityLogsPage() {
 					) : (
 						<div className="space-y-6">
 							{/* Grid de Logs */}
-							<div className="fade-in slide-in-from-bottom-4 grid animate-in grid-cols-1 gap-4 duration-500 sm:grid-cols-2 lg:grid-cols-3">
-								{logsData.logs.map((log) => (
-									<ActivityLogCard
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+								{logsData.logs.map((log, index) => (
+									<div
+										className="fade-in slide-in-from-bottom-4 animate-in"
 										key={log.id}
-										log={{
-											id: log.id,
-											date: log.date,
-											value: Number(log.value),
-											note: log.note,
-											unit: log.unit,
+										style={{
+											animationDelay: `${index * 50}ms`,
+											animationDuration: "500ms",
+											animationFillMode: "both",
 										}}
-									/>
+									>
+										<ActivityLogCard
+											log={{
+												id: log.id,
+												date: log.date,
+												value: Number(log.value),
+												note: log.note,
+												unit: log.unit,
+											}}
+										/>
+									</div>
 								))}
 							</div>
 

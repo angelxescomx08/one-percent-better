@@ -24,7 +24,7 @@ export default function Activities() {
 			<div className="mx-auto max-w-7xl space-y-8">
 				{/* HEADER & CONTROLES */}
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<div className="space-y-1">
+					<div className="fade-in slide-in-from-left-4 animate-in space-y-1 duration-500">
 						<h1 className="font-bold text-3xl text-slate-900 tracking-tight dark:text-slate-50">
 							Mis Actividades
 						</h1>
@@ -33,7 +33,7 @@ export default function Activities() {
 						</p>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="fade-in slide-in-from-right-4 flex animate-in items-center gap-2 delay-100 duration-500">
 						{/* Barra de búsqueda decorativa (funcional si pasas props) */}
 						<div className="relative hidden md:block">
 							<Search className="absolute top-2.5 left-2.5 h-4 w-4 text-slate-400 transition-colors duration-300 ease-in-out" />
@@ -102,9 +102,19 @@ export default function Activities() {
 
 				{/* GRID DE ACTIVIDADES */}
 				{!isLoading && filteredActivities && filteredActivities.length > 0 && (
-					<div className="fade-in slide-in-from-bottom-4 grid animate-in grid-cols-1 gap-6 duration-700 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{filteredActivities.map((activity) => (
-							<ActivityCard activity={activity} key={activity.id} />
+					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{filteredActivities.map((activity, index) => (
+							<div
+								className="fade-in slide-in-from-bottom-4 animate-in"
+								key={activity.id}
+								style={{
+									animationDelay: `${index * 50}ms`,
+									animationDuration: "500ms",
+									animationFillMode: "both",
+								}}
+							>
+								<ActivityCard activity={activity} />
+							</div>
 						))}
 					</div>
 				)}

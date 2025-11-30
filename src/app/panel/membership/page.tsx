@@ -200,7 +200,7 @@ function PricingSection() {
 
 	return (
 		<>
-			<Card>
+			<Card className="fade-in slide-in-from-bottom-4 animate-in delay-200 duration-500">
 				<CardHeader>
 					<CardTitle>Opciones de Compra</CardTitle>
 					<CardDescription>
@@ -211,7 +211,14 @@ function PricingSection() {
 					<div className="grid gap-4 md:grid-cols-3">
 						{/* Precio mensual */}
 						{prices.monthly.length > 0 && (
-							<Card className="border-2 border-slate-200/80 shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] dark:border-slate-800/80">
+							<Card
+								className="fade-in slide-in-from-bottom-4 animate-in border-2 border-slate-200/80 shadow-md transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] dark:border-slate-800/80"
+								style={{
+									animationDelay: "300ms",
+									animationDuration: "500ms",
+									animationFillMode: "both",
+								}}
+							>
 								<CardHeader>
 									<CardTitle className="text-lg">Suscripción Mensual</CardTitle>
 									<CardDescription>
@@ -248,7 +255,14 @@ function PricingSection() {
 
 						{/* Precio de por vida */}
 						{prices.lifetime.length > 0 && (
-							<Card className="relative border-2 border-amber-400/50 shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-amber-500/70 hover:shadow-xl active:scale-[0.98] dark:border-amber-500/30">
+							<Card
+								className="fade-in slide-in-from-bottom-4 relative animate-in border-2 border-amber-400/50 shadow-lg transition-all hover:scale-[1.02] hover:border-amber-500/70 hover:shadow-xl active:scale-[0.98] dark:border-amber-500/30"
+								style={{
+									animationDelay: "350ms",
+									animationDuration: "500ms",
+									animationFillMode: "both",
+								}}
+							>
 								<CardHeader>
 									<div className="flex items-center justify-between">
 										<CardTitle className="text-lg">
@@ -288,7 +302,14 @@ function PricingSection() {
 
 						{/* Precio anual */}
 						{prices.yearly.length > 0 && (
-							<Card className="border-2 border-indigo-500/50 shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-indigo-600/70 hover:shadow-xl active:scale-[0.98] dark:border-indigo-400/50">
+							<Card
+								className="fade-in slide-in-from-bottom-4 animate-in border-2 border-indigo-500/50 shadow-lg transition-all hover:scale-[1.02] hover:border-indigo-600/70 hover:shadow-xl active:scale-[0.98] dark:border-indigo-400/50"
+								style={{
+									animationDelay: "400ms",
+									animationDuration: "500ms",
+									animationFillMode: "both",
+								}}
+							>
 								<CardHeader>
 									<div className="flex items-center justify-between">
 										<CardTitle className="text-lg">Suscripción Anual</CardTitle>
@@ -797,7 +818,7 @@ export default function MembershipPage() {
 		<div className="min-h-screen w-full bg-slate-50/50 p-4 transition-colors duration-300 ease-in-out md:p-8 dark:bg-black">
 			<div className="mx-auto max-w-4xl space-y-6">
 				{/* Header */}
-				<div>
+				<div className="fade-in slide-in-from-left-4 animate-in duration-500">
 					<h1 className="font-bold text-3xl text-slate-900 tracking-tight dark:text-slate-50">
 						Mi Membresía
 					</h1>
@@ -807,7 +828,7 @@ export default function MembershipPage() {
 				</div>
 
 				{/* Información de Membresía */}
-				<Card className="border border-slate-200/80 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80">
+				<Card className="fade-in slide-in-from-bottom-4 animate-in border border-slate-200/80 shadow-lg transition-all delay-100 duration-500 hover:shadow-xl dark:border-slate-800/80">
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<div>
@@ -1033,7 +1054,7 @@ export default function MembershipPage() {
 				{membership && membership.type !== "lifetime" && <PricingSection />}
 
 				{/* Métodos de Pago */}
-				<Card className="border border-slate-200/80 shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl dark:border-slate-800/80">
+				<Card className="fade-in slide-in-from-bottom-4 animate-in border border-slate-200/80 shadow-lg transition-all delay-300 duration-500 hover:shadow-xl dark:border-slate-800/80">
 					<CardHeader>
 						<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 							<div>

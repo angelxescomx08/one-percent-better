@@ -48,24 +48,24 @@ export default function RegisterPage() {
 			<div className="-left-4 absolute top-0 h-96 w-96 animate-blob rounded-full bg-indigo-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-indigo-500/20" />
 			<div className="-right-4 animation-delay-2000 absolute bottom-0 h-96 w-96 animate-blob rounded-full bg-violet-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-violet-500/20" />
 
-			<Card className="fade-in zoom-in-95 z-10 w-full max-w-md animate-in border border-slate-200/80 shadow-2xl transition-all duration-500 ease-in-out hover:shadow-indigo-500/10 dark:border-slate-800/80 dark:shadow-slate-900/50">
+			<Card className="fade-in zoom-in-95 z-10 w-full max-w-md animate-in border border-slate-200/80 shadow-2xl transition-all duration-500 hover:shadow-indigo-500/10 dark:border-slate-800/80 dark:shadow-slate-900/50">
 				<CardHeader className="pt-6 pb-2">
-					<div className="mb-2 flex justify-center">
+					<div className="fade-in slide-in-from-top-4 mb-2 flex animate-in justify-center delay-200 duration-500">
 						{/* Logo Pequeño de Marca */}
 						<div className="flex items-center gap-2 font-bold text-slate-900 text-xl dark:text-white">
 							<Zap className="h-6 w-6 fill-indigo-600 text-indigo-600" />
 							OnePercent
 						</div>
 					</div>
-					<CardTitle className="text-center font-bold text-xl">
+					<CardTitle className="fade-in slide-in-from-bottom-2 animate-in text-center font-bold text-xl delay-300 duration-500">
 						Crear Cuenta
 					</CardTitle>
-					<CardDescription className="text-center">
+					<CardDescription className="fade-in slide-in-from-bottom-2 animate-in text-center delay-350 duration-500">
 						Ingresa tus datos para comenzar
 					</CardDescription>
 				</CardHeader>
 
-				<CardContent className="space-y-6">
+				<CardContent className="fade-in slide-in-from-bottom-4 animate-in space-y-6 delay-400 duration-500">
 					{error && (
 						<div className="fade-in slide-in-from-top-2 animate-in rounded-md border border-red-200/80 bg-red-50/90 p-3 text-red-800 text-sm shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-200">
 							{error}

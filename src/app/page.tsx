@@ -59,16 +59,16 @@ export default async function Home() {
 				<div className="-left-4 absolute top-0 h-72 w-72 animate-blob rounded-full bg-indigo-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-indigo-500/20" />
 				<div className="-right-4 animation-delay-2000 absolute top-0 h-72 w-72 animate-blob rounded-full bg-violet-500/10 opacity-70 mix-blend-multiply blur-3xl filter dark:bg-violet-500/20" />
 
-				<Card className="z-10 w-full max-w-md border border-slate-200/80 shadow-2xl transition-all duration-300 ease-in-out hover:shadow-indigo-500/10 dark:border-slate-800/80 dark:shadow-slate-900/50">
+				<Card className="fade-in zoom-in-95 z-10 w-full max-w-md animate-in border border-slate-200/80 shadow-2xl transition-all duration-700 hover:shadow-indigo-500/10 dark:border-slate-800/80 dark:shadow-slate-900/50">
 					<CardHeader className="space-y-4 pb-2">
 						{/* LOGO CENTRADO */}
-						<div className="mb-2 flex justify-center">
+						<div className="fade-in slide-in-from-top-4 mb-2 flex animate-in justify-center delay-200 duration-500">
 							<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-indigo-600 to-violet-600 shadow-indigo-500/30 shadow-lg transition-all duration-300 ease-in-out hover:scale-110 hover:shadow-indigo-500/50">
 								<Zap className="h-7 w-7 fill-white text-white transition-transform duration-300 ease-in-out" />
 							</div>
 						</div>
 
-						<div className="space-y-2 text-center">
+						<div className="fade-in slide-in-from-bottom-2 animate-in space-y-2 text-center delay-300 duration-500">
 							<CardTitle className="font-bold text-2xl text-slate-900 tracking-tight dark:text-white">
 								Bienvenido a OnePercent
 							</CardTitle>
@@ -80,7 +80,7 @@ export default async function Home() {
 
 					<CardContent className="space-y-6">
 						<form action={signInWithEmail} className="space-y-4">
-							<Field>
+							<Field className="fade-in slide-in-from-bottom-4 animate-in delay-400 duration-500">
 								<FieldLabel
 									className="text-slate-700 dark:text-slate-300"
 									htmlFor="email"
@@ -98,7 +98,7 @@ export default async function Home() {
 									/>
 								</FieldContent>
 							</Field>
-							<Field>
+							<Field className="fade-in slide-in-from-bottom-4 animate-in delay-500 duration-500">
 								<div className="flex items-center justify-between">
 									<FieldLabel
 										className="text-slate-700 dark:text-slate-300"
@@ -126,14 +126,14 @@ export default async function Home() {
 							</Field>
 
 							<Button
-								className="h-11 w-full bg-indigo-600 text-base shadow-indigo-500/20 shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-[0.98] dark:bg-indigo-500 dark:hover:bg-indigo-600"
+								className="fade-in slide-in-from-bottom-4 h-11 w-full animate-in bg-indigo-600 text-base shadow-indigo-500/20 shadow-md transition-all delay-600 duration-500 hover:scale-[1.02] hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:shadow-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:scale-[0.98] dark:bg-indigo-500 dark:hover:bg-indigo-600"
 								type="submit"
 							>
 								Iniciar Sesión
 							</Button>
 						</form>
 
-						<div className="relative">
+						<div className="fade-in relative animate-in delay-700 duration-500">
 							<div className="absolute inset-0 flex items-center">
 								<Separator className="dark:bg-slate-800" />
 							</div>
@@ -144,7 +144,10 @@ export default async function Home() {
 							</div>
 						</div>
 
-						<form action={signInWithGoogle}>
+						<form
+							action={signInWithGoogle}
+							className="fade-in slide-in-from-bottom-4 animate-in delay-800 duration-500"
+						>
 							<Button
 								className="h-11 w-full border border-slate-200 bg-white text-slate-700 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 hover:shadow-md focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800"
 								type="submit"

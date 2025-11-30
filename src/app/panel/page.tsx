@@ -216,7 +216,7 @@ export default function PanelPage() {
 			<div className="mx-auto max-w-7xl space-y-6">
 				{/* Header & Controls */}
 				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div>
+					<div className="fade-in slide-in-from-left-4 animate-in duration-500">
 						<h1 className="font-bold text-3xl text-slate-900 tracking-tight dark:text-slate-50">
 							Panel de Rendimiento
 						</h1>
@@ -225,7 +225,7 @@ export default function PanelPage() {
 						</p>
 					</div>
 
-					<div className="flex items-center gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/90">
+					<div className="fade-in slide-in-from-right-4 flex animate-in items-center gap-1 rounded-lg border border-slate-200/80 bg-white/90 p-1 shadow-sm backdrop-blur-sm transition-all delay-100 duration-500 dark:border-slate-800/80 dark:bg-slate-900/90">
 						{(Object.keys(PERIOD_LABELS) as Period[]).map((period) => {
 							const currentPeriod =
 								activeTab === "rankings" ? rankingPeriod : improvementPeriod;
@@ -258,7 +258,7 @@ export default function PanelPage() {
 					onValueChange={(v) => setActiveTab(v as "rankings" | "improvements")}
 					value={activeTab}
 				>
-					<TabsList className="grid w-full max-w-[400px] grid-cols-2 border border-slate-200/80 bg-slate-100/90 p-1 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/90">
+					<TabsList className="fade-in slide-in-from-bottom-2 grid w-full max-w-[400px] animate-in grid-cols-2 border border-slate-200/80 bg-slate-100/90 p-1 shadow-sm backdrop-blur-sm transition-all delay-150 duration-500 dark:border-slate-800/80 dark:bg-slate-900/90">
 						<TabsTrigger
 							className="transition-all duration-300 ease-in-out data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=inactive]:text-slate-600 data-[state=active]:shadow-sm data-[state=active]:active:scale-95 data-[state=inactive]:hover:bg-slate-200/50 data-[state=active]:hover:shadow-md dark:data-[state=active]:bg-slate-800 dark:data-[state=inactive]:hover:bg-slate-800/50"
 							value="rankings"
@@ -353,11 +353,16 @@ export default function PanelPage() {
 
 											return (
 												<Card
-													className={`group relative cursor-pointer overflow-hidden border-2 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] ${style.border} bg-linear-to-br ${style.gradient}`}
+													className={`group fade-in slide-in-from-left-4 relative animate-in cursor-pointer overflow-hidden border-2 transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] ${style.border} bg-linear-to-br ${style.gradient}`}
 													key={ranking.activity.id}
 													onClick={() =>
 														setSelectedActivityId(ranking.activity.id)
 													}
+													style={{
+														animationDelay: `${index * 100}ms`,
+														animationDuration: "500ms",
+														animationFillMode: "both",
+													}}
 												>
 													{/* Marca de agua decorativa */}
 													<RankIcon className="-right-6 -top-6 absolute h-32 w-32 rotate-12 opacity-[0.03] transition-transform group-hover:scale-110 group-hover:opacity-[0.07]" />
@@ -725,17 +730,20 @@ export default function PanelPage() {
 												<Skeleton className="h-32 w-full rounded-xl" key={i} />
 											))
 										: improvementsData && improvementsData.length > 0
-											? improvementsData.slice(0, 4).map((imp) => {
+											? improvementsData.slice(0, 4).map((imp, index) => {
 													const isPositive = imp.improvementPercentage > 0;
 													const unit = imp.unit.shortName ?? imp.unit.name;
 													return (
 														<Card
-															className="overflow-hidden border border-slate-200/80 border-l-4 shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] dark:border-slate-800/80"
+															className="fade-in slide-in-from-bottom-4 animate-in overflow-hidden border border-slate-200/80 border-l-4 shadow-md transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] dark:border-slate-800/80"
 															key={imp.activity.id}
 															style={{
 																borderLeftColor: isPositive
 																	? "#10b981"
 																	: "#f43f5e",
+																animationDelay: `${index * 100}ms`,
+																animationDuration: "500ms",
+																animationFillMode: "both",
 															}}
 														>
 															<CardContent className="p-5">
@@ -815,7 +823,7 @@ export default function PanelPage() {
 								{improvementsData && improvementsData.length > 0 && (
 									<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 										{/* Gráfico 1: Evolución */}
-										<Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
+										<Card className="fade-in slide-in-from-left-4 flex animate-in flex-col border border-slate-200/80 shadow-lg transition-all delay-300 duration-500 hover:shadow-xl dark:border-slate-800/80">
 											<CardHeader>
 												<CardTitle className="flex items-center gap-2 text-base">
 													<Activity className="h-4 w-4 text-emerald-500" />
@@ -912,7 +920,7 @@ export default function PanelPage() {
 										</Card>
 
 										{/* Gráfico 2: Comparativa Barras */}
-										<Card className="flex flex-col border-slate-200 shadow-sm dark:border-slate-800">
+										<Card className="fade-in slide-in-from-right-4 flex animate-in flex-col border border-slate-200/80 shadow-lg transition-all delay-400 duration-500 hover:shadow-xl dark:border-slate-800/80">
 											<CardHeader>
 												<CardTitle className="flex items-center gap-2 text-base">
 													<BarChart3 className="h-4 w-4 text-blue-500" />

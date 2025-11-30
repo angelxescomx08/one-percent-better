@@ -206,7 +206,7 @@ export default function CreateActivityPage() {
 						<form onSubmit={handleSubmit(onSubmit)}>
 							<FieldGroup className="space-y-6">
 								{/* --- SECCIÓN 1: DETALLES BÁSICOS (Nombre y Descripción primero) --- */}
-								<div className="space-y-4">
+								<div className="fade-in slide-in-from-top-4 animate-in space-y-4 delay-100 duration-500">
 									{/* Campo Nombre */}
 									<Field data-invalid={!!errors.name}>
 										<FieldLabel
@@ -252,7 +252,7 @@ export default function CreateActivityPage() {
 								</div>
 
 								{/* --- SECCIÓN 2: CLASIFICACIÓN Y MEDICIÓN (Agrupado Visualmente) --- */}
-								<div className="rounded-xl border border-slate-200/80 bg-slate-50/90 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out dark:border-slate-800/80 dark:bg-slate-900/50">
+								<div className="fade-in slide-in-from-bottom-4 animate-in rounded-xl border border-slate-200/80 bg-slate-50/90 p-6 shadow-sm backdrop-blur-sm transition-all delay-200 duration-500 dark:border-slate-800/80 dark:bg-slate-900/50">
 									<h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
 										<LayoutGrid className="h-4 w-4 text-indigo-500" />
 										Configuración de Medición
@@ -405,7 +405,7 @@ export default function CreateActivityPage() {
 								</div>
 
 								{/* Botones */}
-								<div className="flex justify-end gap-3 pt-6">
+								<div className="fade-in slide-in-from-bottom-4 flex animate-in justify-end gap-3 pt-6 delay-300 duration-500">
 									<Button
 										disabled={isSubmitting}
 										onClick={() => router.back()}
