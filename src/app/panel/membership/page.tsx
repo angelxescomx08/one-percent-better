@@ -363,8 +363,10 @@ function CheckoutModal({
 	const [error, setError] = useState<string | null>(null);
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
+	const [showErrorModal, setShowErrorModal] = useState(false);
 
-	const { data: paymentMethods } = api.stripe.getPaymentMethods.useQuery();
+	const { data: paymentMethods, isLoading: isLoadingPaymentMethods } =
+		api.stripe.getPaymentMethods.useQuery();
 	const createLifetimePaymentIntent =
 		api.stripe.createLifetimePaymentIntent.useMutation();
 	const createSubscription = api.stripe.createSubscription.useMutation();
@@ -372,8 +374,29 @@ function CheckoutModal({
 	// Inicializar el checkout
 	useEffect(() => {
 		const initializeCheckout = async () => {
+			// Esperar a que se carguen los métodos de pago
+			if (isLoadingPaymentMethods) {
+				setIsInitializing(true);
+				return;
+			}
+
 			setIsInitializing(true);
 			setError(null);
+
+			// Verificar si hay métodos de pago disponibles
+			const hasPaymentMethods =
+				paymentMethods?.paymentMethods &&
+				paymentMethods.paymentMethods.length > 0;
+
+			if (!hasPaymentMethods) {
+				setError(
+					"Necesitas agregar un método de pago antes de realizar una compra o suscripción. Por favor, agrega una tarjeta en la sección de Métodos de Pago.",
+				);
+				setShowErrorModal(true);
+				setIsInitializing(false);
+				return;
+			}
+
 			try {
 				if (type === "lifetime") {
 					const result = await createLifetimePaymentIntent.mutateAsync({
@@ -389,6 +412,7 @@ function CheckoutModal({
 								: null;
 						if (!defaultPaymentMethodId) {
 							setError("No se pudo obtener el método de pago por defecto");
+							setShowErrorModal(true);
 							setIsInitializing(false);
 							return;
 						}
@@ -404,25 +428,37 @@ function CheckoutModal({
 							return;
 						}
 					} else {
-						// Si no hay método por defecto, crear suscripción y pedir método de pago
-						const result = await createSubscription.mutateAsync({
-							priceId,
-						});
-						if (result.clientSecret) {
-							setClientSecret(result.clientSecret);
+						// Si no hay método por defecto pero hay métodos disponibles, usar el primero
+						const firstPaymentMethod = paymentMethods?.paymentMethods?.[0]?.id;
+						if (firstPaymentMethod) {
+							const result = await createSubscription.mutateAsync({
+								priceId,
+								paymentMethodId: firstPaymentMethod,
+							});
+							if (result.clientSecret) {
+								setClientSecret(result.clientSecret);
+							} else {
+								onSuccess();
+								return;
+							}
 						} else {
-							onSuccess();
+							setError(
+								"No se pudo encontrar un método de pago válido. Por favor, agrega una tarjeta en la sección de Métodos de Pago.",
+							);
+							setShowErrorModal(true);
+							setIsInitializing(false);
 							return;
 						}
 					}
 				}
 			} catch (err) {
 				console.error("Error al inicializar checkout:", err);
-				setError(
+				const errorMessage =
 					err instanceof Error
 						? err.message
-						: "Error al inicializar el proceso de pago",
-				);
+						: "Error al inicializar el proceso de pago";
+				setError(errorMessage);
+				setShowErrorModal(true);
 			} finally {
 				setIsInitializing(false);
 			}
@@ -435,6 +471,8 @@ function CheckoutModal({
 		createLifetimePaymentIntent.mutateAsync,
 		createSubscription.mutateAsync,
 		paymentMethods?.defaultPaymentMethod,
+		paymentMethods?.paymentMethods,
+		isLoadingPaymentMethods,
 		onSuccess,
 	]);
 
@@ -457,15 +495,33 @@ function CheckoutModal({
 		return (
 			<ModalDrawer
 				description={error}
-				isOpen={true}
-				setIsOpen={onCancel}
-				title="Error"
+				isOpen={showErrorModal}
+				setIsOpen={(open) => {
+					const isOpenValue =
+						typeof open === "function" ? open(showErrorModal) : open;
+					setShowErrorModal(isOpenValue);
+					if (!isOpenValue) {
+						onCancel();
+					}
+				}}
+				title="Error al procesar el pago"
 			>
-				<DialogFooter>
-					<Button onClick={onCancel} variant="outline">
-						Cerrar
-					</Button>
-				</DialogFooter>
+				<div className="space-y-4">
+					<div className="rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+						{error}
+					</div>
+					<DialogFooter>
+						<Button
+							onClick={() => {
+								setShowErrorModal(false);
+								onCancel();
+							}}
+							variant="outline"
+						>
+							Cerrar
+						</Button>
+					</DialogFooter>
+				</div>
 			</ModalDrawer>
 		);
 	}
