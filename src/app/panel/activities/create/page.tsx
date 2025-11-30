@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import ModalDrawer from "~/app/_components/shared/modalDrawer";
 import { Button } from "~/components/ui/button";
 import {
 	Card,
@@ -22,14 +23,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "~/components/ui/dialog";
+import { DialogFooter } from "~/components/ui/dialog";
 import {
 	Field,
 	FieldContent,
@@ -436,129 +430,120 @@ export default function CreateActivityPage() {
 				{/* --- DIÁLOGOS (Mantienen estructura, mejora visual mínima) --- */}
 
 				{/* Diálogo Categoría */}
-				<Dialog
-					onOpenChange={setIsCategoryDialogOpen}
-					open={isCategoryDialogOpen}
+				<ModalDrawer
+					description="Organiza tus actividades por grupos."
+					isOpen={isCategoryDialogOpen}
+					setIsOpen={setIsCategoryDialogOpen}
+					title="Nueva categoría"
 				>
-					<DialogContent>
-						<DialogHeader>
-							<div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-								<Library className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-							</div>
-							<DialogTitle className="text-center">Nueva categoría</DialogTitle>
-							<DialogDescription className="text-center">
-								Organiza tus actividades por grupos.
-							</DialogDescription>
-						</DialogHeader>
-						<form
-							className="space-y-4"
-							onSubmit={categoryForm.handleSubmit(onCategorySubmit)}
-						>
-							<Field data-invalid={!!categoryForm.formState.errors.name}>
-								<FieldLabel htmlFor="category-name">Nombre</FieldLabel>
-								<FieldContent>
-									<Input
-										id="category-name"
-										placeholder="Ej: Lectura, Ejercicio..."
-										type="text"
-										{...categoryForm.register("name")}
-										disabled={createCategory.isPending}
-									/>
-									<FieldError
-										errors={
-											categoryForm.formState.errors.name
-												? [categoryForm.formState.errors.name]
-												: []
-										}
-									/>
-								</FieldContent>
-							</Field>
-							<DialogFooter>
-								<Button
+					<form
+						className="space-y-4"
+						onSubmit={categoryForm.handleSubmit(onCategorySubmit)}
+					>
+						<div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+							<Library className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+						</div>
+						<Field data-invalid={!!categoryForm.formState.errors.name}>
+							<FieldLabel htmlFor="category-name">Nombre</FieldLabel>
+							<FieldContent>
+								<Input
+									id="category-name"
+									placeholder="Ej: Lectura, Ejercicio..."
+									type="text"
+									{...categoryForm.register("name")}
 									disabled={createCategory.isPending}
-									onClick={() => setIsCategoryDialogOpen(false)}
-									type="button"
-									variant="outline"
-								>
-									Cancelar
-								</Button>
-								<Button disabled={createCategory.isPending} type="submit">
-									Guardar
-								</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
+								/>
+								<FieldError
+									errors={
+										categoryForm.formState.errors.name
+											? [categoryForm.formState.errors.name]
+											: []
+									}
+								/>
+							</FieldContent>
+						</Field>
+						<DialogFooter>
+							<Button
+								disabled={createCategory.isPending}
+								onClick={() => setIsCategoryDialogOpen(false)}
+								type="button"
+								variant="outline"
+							>
+								Cancelar
+							</Button>
+							<Button disabled={createCategory.isPending} type="submit">
+								Guardar
+							</Button>
+						</DialogFooter>
+					</form>
+				</ModalDrawer>
 
 				{/* Diálogo Unidad */}
-				<Dialog onOpenChange={setIsUnitDialogOpen} open={isUnitDialogOpen}>
-					<DialogContent>
-						<DialogHeader>
-							<div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50">
-								<Ruler className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-							</div>
-							<DialogTitle className="text-center">Nueva unidad</DialogTitle>
-							<DialogDescription className="text-center">
-								Personaliza cómo mides esta actividad.
-							</DialogDescription>
-						</DialogHeader>
-						<form
-							className="space-y-4"
-							onSubmit={unitForm.handleSubmit(onUnitSubmit)}
-						>
-							<Field data-invalid={!!unitForm.formState.errors.name}>
-								<FieldLabel htmlFor="unit-name">Nombre (Plural)</FieldLabel>
-								<FieldContent>
-									<Input
-										id="unit-name"
-										placeholder="Ej: Páginas, Litros, Pesos"
-										type="text"
-										{...unitForm.register("name")}
-										disabled={createUnit.isPending}
-									/>
-									<FieldError
-										errors={
-											unitForm.formState.errors.name
-												? [unitForm.formState.errors.name]
-												: []
-										}
-									/>
-								</FieldContent>
-							</Field>
-							<Field data-invalid={!!unitForm.formState.errors.shortName}>
-								<FieldLabel htmlFor="unit-short-name">Abreviatura</FieldLabel>
-								<FieldContent>
-									<Input
-										id="unit-short-name"
-										placeholder="Ej: pag, lts, mxn"
-										type="text"
-										{...unitForm.register("shortName")}
-										disabled={createUnit.isPending}
-									/>
-									<FieldDescription>
-										Lo que verás en las gráficas (Opcional)
-									</FieldDescription>
-								</FieldContent>
-							</Field>
-							<DialogFooter>
-								<Button
+				<ModalDrawer
+					description="Personaliza cómo mides esta actividad."
+					isOpen={isUnitDialogOpen}
+					setIsOpen={setIsUnitDialogOpen}
+					title="Nueva unidad"
+				>
+					<form
+						className="space-y-4"
+						onSubmit={unitForm.handleSubmit(onUnitSubmit)}
+					>
+						<div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50">
+							<Ruler className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+						</div>
+						<Field data-invalid={!!unitForm.formState.errors.name}>
+							<FieldLabel htmlFor="unit-name">Nombre (Plural)</FieldLabel>
+							<FieldContent>
+								<Input
+									id="unit-name"
+									placeholder="Ej: Páginas, Litros, Pesos"
+									type="text"
+									{...unitForm.register("name")}
 									disabled={createUnit.isPending}
-									onClick={() => setIsUnitDialogOpen(false)}
-									type="button"
-									variant="outline"
-								>
-									Cancelar
-								</Button>
-								<Button
-									disabled={createUnit.isPending || !selectedCategoryId}
-									type="submit"
-								>
-									Guardar
-								</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
+								/>
+								<FieldError
+									errors={
+										unitForm.formState.errors.name
+											? [unitForm.formState.errors.name]
+											: []
+									}
+								/>
+							</FieldContent>
+						</Field>
+						<Field data-invalid={!!unitForm.formState.errors.shortName}>
+							<FieldLabel htmlFor="unit-short-name">Abreviatura</FieldLabel>
+							<FieldContent>
+								<Input
+									id="unit-short-name"
+									placeholder="Ej: pag, lts, mxn"
+									type="text"
+									{...unitForm.register("shortName")}
+									disabled={createUnit.isPending}
+								/>
+								<FieldDescription>
+									Lo que verás en las gráficas (Opcional)
+								</FieldDescription>
+							</FieldContent>
+						</Field>
+						<DialogFooter>
+							<Button
+								disabled={createUnit.isPending}
+								onClick={() => setIsUnitDialogOpen(false)}
+								type="button"
+								variant="outline"
+							>
+								Cancelar
+							</Button>
+							<Button
+								disabled={createUnit.isPending || !selectedCategoryId}
+								type="submit"
+							>
+								Guardar
+							</Button>
+						</DialogFooter>
+					</form>
+				</ModalDrawer>
 			</section>
 		</div>
 	);

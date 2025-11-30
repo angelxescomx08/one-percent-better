@@ -31,14 +31,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "~/components/ui/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "~/components/ui/dialog";
+import { DialogFooter } from "~/components/ui/dialog";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { env } from "~/env";
@@ -1169,35 +1162,34 @@ export default function MembershipPage() {
 				</ModalDrawer>
 
 				{/* Diálogo para eliminar método de pago */}
-				<Dialog
-					onOpenChange={(open) => !open && setPaymentMethodToDelete(null)}
-					open={!!paymentMethodToDelete}
+				<ModalDrawer
+					description="¿Estás seguro de que deseas eliminar este método de pago? Esta acción no se puede deshacer."
+					isOpen={!!paymentMethodToDelete}
+					setIsOpen={(open) => {
+						const isOpenValue =
+							typeof open === "function" ? open(!!paymentMethodToDelete) : open;
+						if (!isOpenValue) {
+							setPaymentMethodToDelete(null);
+						}
+					}}
+					title="Eliminar método de pago"
 				>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Eliminar método de pago</DialogTitle>
-							<DialogDescription>
-								¿Estás seguro de que deseas eliminar este método de pago? Esta
-								acción no se puede deshacer.
-							</DialogDescription>
-						</DialogHeader>
-						<DialogFooter>
-							<Button
-								onClick={() => setPaymentMethodToDelete(null)}
-								variant="outline"
-							>
-								Cancelar
-							</Button>
-							<Button
-								disabled={deletePaymentMethod.isPending}
-								onClick={handleDeletePaymentMethod}
-								variant="destructive"
-							>
-								{deletePaymentMethod.isPending ? "Eliminando..." : "Eliminar"}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+					<DialogFooter>
+						<Button
+							onClick={() => setPaymentMethodToDelete(null)}
+							variant="outline"
+						>
+							Cancelar
+						</Button>
+						<Button
+							disabled={deletePaymentMethod.isPending}
+							onClick={handleDeletePaymentMethod}
+							variant="destructive"
+						>
+							{deletePaymentMethod.isPending ? "Eliminando..." : "Eliminar"}
+						</Button>
+					</DialogFooter>
+				</ModalDrawer>
 			</div>
 		</div>
 	);
