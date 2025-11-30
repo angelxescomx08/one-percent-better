@@ -1035,7 +1035,7 @@ export default function MembershipPage() {
 				{/* Métodos de Pago */}
 				<Card>
 					<CardHeader>
-						<div className="flex items-center justify-between">
+						<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 							<div>
 								<CardTitle>Métodos de Pago</CardTitle>
 								<CardDescription>
@@ -1043,6 +1043,7 @@ export default function MembershipPage() {
 								</CardDescription>
 							</div>
 							<Button
+								className="w-full md:w-auto"
 								disabled={createSetupIntent.isPending}
 								onClick={handleAddPaymentMethod}
 							>
@@ -1067,22 +1068,25 @@ export default function MembershipPage() {
 							<div className="space-y-3">
 								{paymentMethods?.paymentMethods.map((pm) => (
 									<div
-										className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
+										className="flex flex-col gap-4 rounded-lg border p-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between dark:hover:bg-slate-900"
 										key={pm.id}
 									>
 										<div className="flex items-center gap-4">
-											<div className="flex h-12 w-12 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800">
+											<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800">
 												<CreditCard className="h-6 w-6 text-slate-600 dark:text-slate-400" />
 											</div>
-											<div>
-												<div className="flex items-center gap-2">
-													<p className="font-medium">
+											<div className="min-w-0 flex-1">
+												<div className="flex flex-wrap items-center gap-2">
+													<p className="wrap-break-word font-medium">
 														{pm.card
 															? `${formatCardBrand(pm.card.brand)} •••• ${pm.card.last4}`
 															: "Tarjeta"}
 													</p>
 													{pm.isDefault && (
-														<Badge className="text-xs" variant="secondary">
+														<Badge
+															className="shrink-0 text-xs"
+															variant="secondary"
+														>
 															Por defecto
 														</Badge>
 													)}
@@ -1094,19 +1098,24 @@ export default function MembershipPage() {
 												)}
 											</div>
 										</div>
-										<div className="flex items-center gap-2">
+										<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
 											{!pm.isDefault && (
 												<Button
+													className="flex-1 sm:flex-initial"
 													disabled={setDefaultPaymentMethod.isPending}
 													onClick={() => handleSetDefault(pm.id)}
 													size="sm"
 													variant="outline"
 												>
 													<Edit className="mr-1 h-3 w-3" />
-													Usar por defecto
+													<span className="hidden sm:inline">
+														Usar por defecto
+													</span>
+													<span className="sm:hidden">Por defecto</span>
 												</Button>
 											)}
 											<Button
+												className="flex-1 sm:flex-initial"
 												disabled={deletePaymentMethod.isPending}
 												onClick={() => setPaymentMethodToDelete(pm.id)}
 												size="sm"
