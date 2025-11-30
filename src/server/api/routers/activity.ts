@@ -573,86 +573,93 @@ export const activityRouter = createTRPCRouter({
       const now = new Date();
       now.setHours(23, 59, 59, 999);
 
-      // Calcular fechas del período actual
-      let currentStart: Date;
-      let currentEnd = new Date(now);
-      currentEnd.setHours(23, 59, 59, 999);
+      // Fechas para HOY (solo el día actual)
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(now);
+      todayEnd.setHours(23, 59, 59, 999);
 
-      // Calcular fechas del período de comparación
+      // Calcular fechas del período de comparación (promedio anterior, sin incluir hoy)
       let compareStart: Date;
       let compareEnd: Date;
 
+      // Variables para el día a comparar (puede ser hoy o ayer)
+      let compareDayStart: Date;
+      let compareDayEnd: Date;
+
       switch (input.period) {
         case "yesterday": {
+          // Hoy vs promedio desde el inicio hasta ayer (sin incluir hoy)
+          compareDayStart = todayStart;
+          compareDayEnd = todayEnd;
+
+          compareStart = new Date(0);
+
           const yesterday = new Date(now);
           yesterday.setDate(yesterday.getDate() - 1);
-          currentStart = new Date(yesterday);
-          currentStart.setHours(0, 0, 0, 0);
-          currentEnd = new Date(yesterday);
-          currentEnd.setHours(23, 59, 59, 999);
-
-          const dayBefore = new Date(yesterday);
-          dayBefore.setDate(dayBefore.getDate() - 1);
-          compareStart = new Date(dayBefore);
-          compareStart.setHours(0, 0, 0, 0);
-          compareEnd = new Date(dayBefore);
-          compareEnd.setHours(23, 59, 59, 999);
+          yesterday.setHours(23, 59, 59, 999);
+          compareEnd = yesterday;
           break;
         }
         case "week": {
+          // Hoy vs promedio de la última semana (sin incluir hoy)
+          compareDayStart = todayStart;
+          compareDayEnd = todayEnd;
+
           const weekAgo = new Date(now);
           weekAgo.setDate(weekAgo.getDate() - 7);
-          currentStart = new Date(weekAgo);
-          currentStart.setHours(0, 0, 0, 0);
+          weekAgo.setHours(0, 0, 0, 0);
+          compareStart = weekAgo;
 
-          const twoWeeksAgo = new Date(weekAgo);
-          twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 7);
-          compareStart = new Date(twoWeeksAgo);
-          compareStart.setHours(0, 0, 0, 0);
-          compareEnd = new Date(weekAgo);
-          compareEnd.setDate(compareEnd.getDate() - 1);
-          compareEnd.setHours(23, 59, 59, 999);
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(23, 59, 59, 999);
+          compareEnd = yesterday;
           break;
         }
         case "month": {
+          // Hoy vs promedio del último mes (sin incluir hoy)
+          compareDayStart = todayStart;
+          compareDayEnd = todayEnd;
+
           const monthAgo = new Date(now);
           monthAgo.setMonth(monthAgo.getMonth() - 1);
-          currentStart = new Date(monthAgo);
-          currentStart.setHours(0, 0, 0, 0);
+          monthAgo.setHours(0, 0, 0, 0);
+          compareStart = monthAgo;
 
-          const twoMonthsAgo = new Date(monthAgo);
-          twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 1);
-          compareStart = new Date(twoMonthsAgo);
-          compareStart.setHours(0, 0, 0, 0);
-          compareEnd = new Date(monthAgo);
-          compareEnd.setDate(compareEnd.getDate() - 1);
-          compareEnd.setHours(23, 59, 59, 999);
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(23, 59, 59, 999);
+          compareEnd = yesterday;
           break;
         }
         case "year": {
+          // Hoy vs promedio del último año (sin incluir hoy)
+          compareDayStart = todayStart;
+          compareDayEnd = todayEnd;
+
           const yearAgo = new Date(now);
           yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-          currentStart = new Date(yearAgo);
-          currentStart.setHours(0, 0, 0, 0);
+          yearAgo.setHours(0, 0, 0, 0);
+          compareStart = yearAgo;
 
-          const twoYearsAgo = new Date(yearAgo);
-          twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 1);
-          compareStart = new Date(twoYearsAgo);
-          compareStart.setHours(0, 0, 0, 0);
-          compareEnd = new Date(yearAgo);
-          compareEnd.setDate(compareEnd.getDate() - 1);
-          compareEnd.setHours(23, 59, 59, 999);
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(23, 59, 59, 999);
+          compareEnd = yesterday;
           break;
         }
         case "all": {
-          // Para "all", comparar todo el tiempo vs desde el inicio hasta hace un año
-          currentStart = new Date(0); // Desde siempre
+          // Hoy vs promedio histórico (desde el inicio, sin incluir hoy)
+          compareDayStart = todayStart;
+          compareDayEnd = todayEnd;
 
-          const yearAgo = new Date(now);
-          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
           compareStart = new Date(0);
-          compareEnd = new Date(yearAgo);
-          compareEnd.setHours(23, 59, 59, 999);
+
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(23, 59, 59, 999);
+          compareEnd = yesterday;
           break;
         }
       }
@@ -672,8 +679,8 @@ export const activityRouter = createTRPCRouter({
 
       const improvements = await Promise.all(
         userActivities.map(async (ua) => {
-          // Calcular promedio del período actual
-          const currentLogs = await db
+          // Calcular promedio del día a comparar (hoy o ayer)
+          const todayLogs = await db
             .select({
               value: activityLog.value,
             })
@@ -682,12 +689,17 @@ export const activityRouter = createTRPCRouter({
               and(
                 eq(activityLog.activityId, ua.activity.id),
                 eq(activityLog.userId, session.user.id),
-                gte(activityLog.date, currentStart),
-                lte(activityLog.date, currentEnd),
+                gte(activityLog.date, compareDayStart),
+                lte(activityLog.date, compareDayEnd),
               ),
             );
 
-          // Calcular promedio del período anterior
+          // Si no hay datos de hoy, retornar null
+          if (todayLogs.length === 0) {
+            return null;
+          }
+
+          // Calcular promedio del período anterior (sin incluir hoy)
           const previousLogs = await db
             .select({
               value: activityLog.value,
@@ -702,26 +714,24 @@ export const activityRouter = createTRPCRouter({
               ),
             );
 
-          if (currentLogs.length === 0) {
-            return null;
-          }
-
+          // Promedio de hoy
           const currentAvg =
-            currentLogs.reduce((sum, log) => sum + Number(log.value), 0) /
-            currentLogs.length;
+            todayLogs.reduce((sum, log) => sum + Number(log.value), 0) /
+            todayLogs.length;
 
           if (previousLogs.length === 0) {
-            // Si no hay datos anteriores, considerar mejora del 0%
+            // Si no hay datos anteriores, es el primer registro - considerar mejora del 100%
             return {
               activity: ua.activity,
               category: ua.category,
               unit: ua.unit,
               currentAvg,
-              previousAvg: currentAvg,
-              improvementPercentage: 0,
+              previousAvg: 0,
+              improvementPercentage: 100,
             };
           }
 
+          // Promedio del período anterior
           const previousAvg =
             previousLogs.reduce((sum, log) => sum + Number(log.value), 0) /
             previousLogs.length;

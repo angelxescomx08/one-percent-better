@@ -26,6 +26,36 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+
+// Componente personalizado para rotar los ticks del eje Y
+const CustomYAxisTick = (props: {
+	x?: number;
+	y?: number;
+	payload?: { value: string };
+	[key: string]: unknown;
+}) => {
+	const { x = 0, y = 0, payload } = props;
+	if (!payload?.value) return null;
+
+	return (
+		<g transform={`translate(${x},${y})`}>
+			<text
+				dy={4}
+				fill="#64748b"
+				fontSize={11}
+				textAnchor="end"
+				transform="rotate(-90)"
+				x={0}
+				y={0}
+			>
+				{payload.value.length > 25
+					? `${payload.value.substring(0, 25)}...`
+					: payload.value}
+			</text>
+		</g>
+	);
+};
+
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -176,8 +206,8 @@ export default function PanelPage() {
 		})) ?? [];
 
 	const chartConfig = {
-		actual: { label: "Actual", color: "#10b981" },
-		anterior: { label: "Anterior", color: "#94a3b8" },
+		actual: { label: "Hoy", color: "#10b981" },
+		anterior: { label: "Promedio", color: "#94a3b8" },
 	};
 
 	// --- Renderizado ---
@@ -740,7 +770,10 @@ export default function PanelPage() {
 																	</span>
 																</div>
 																<p className="mt-2 text-slate-400 text-xs">
-																	{imp.currentAvg} {unit} (vs {imp.previousAvg})
+																	Hoy: {imp.currentAvg.toFixed(2)} {unit}{" "}
+																	{imp.previousAvg > 0
+																		? `(promedio: ${imp.previousAvg.toFixed(2)})`
+																		: "(primer registro)"}
 																</p>
 															</CardContent>
 														</Card>
@@ -886,7 +919,7 @@ export default function PanelPage() {
 													Comparativa: {PERIOD_LABELS[improvementPeriod]}
 												</CardTitle>
 												<CardDescription>
-													Actual vs Anterior por actividad
+													Hoy vs Promedio por actividad
 												</CardDescription>
 											</CardHeader>
 											<CardContent className="min-h-[350px] flex-1 p-2 sm:p-6">
@@ -917,15 +950,9 @@ export default function PanelPage() {
 																<YAxis
 																	axisLine={false}
 																	dataKey="name"
-																	tick={{ fontSize: 11, fill: "#64748b" }}
-																	tickFormatter={(value) =>
-																		value.length > 15
-																			? `${value.substring(0, 15)}...`
-																			: value
-																	}
+																	tick={<CustomYAxisTick />}
 																	tickLine={false}
 																	type="category"
-																	// Truco para truncar texto largo en YAxis si es necesario
 																	width={100}
 																/>
 																<XAxis hide type="number" />
@@ -951,7 +978,7 @@ export default function PanelPage() {
 																							<div className="flex items-center gap-2">
 																								<div className="h-2 w-2 rounded-full bg-emerald-500" />
 																								<span className="text-slate-500">
-																									Actual:
+																									Hoy:
 																								</span>
 																							</div>
 																							<span className="font-medium font-mono">
@@ -963,7 +990,7 @@ export default function PanelPage() {
 																							<div className="flex items-center gap-2">
 																								<div className="h-2 w-2 rounded-full bg-slate-400" />
 																								<span className="text-slate-500">
-																									Anterior:
+																									Promedio:
 																								</span>
 																							</div>
 																							<span className="font-medium font-mono">
